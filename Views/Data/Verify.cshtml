@@ -1,0 +1,97 @@
+<link href="https://unpkg.com/filepond-plugin-image-preview/dist/filepond-plugin-image-preview.min.css" rel="stylesheet" />
+<link href="https://unpkg.com/filepond-plugin-file-poster/dist/filepond-plugin-file-poster.css" rel="stylesheet">
+<link href="https://unpkg.com/filepond/dist/filepond.min.css" rel="stylesheet">
+
+<style>
+    /**
+    * FilePond Custom Styles
+    */
+    .filepond--drop-label {
+        color: #4c4e53;
+    }
+
+    .filepond--label-action {
+        text-decoration-color: #babdc0;
+    }
+
+    .filepond--panel-root {
+        border-radius: 2em;
+        background-color: #edf0f4;
+        height: 1em;
+    }
+
+    .filepond--item-panel {
+        background-color: #595e68;
+    }
+
+    .filepond--drip-blob {
+        background-color: #7f8a9a;
+    }
+</style>
+
+@{
+    ViewData["Title"] = "Send Documents";
+}
+<h2>Send Documents</h2>
+
+<form method="post" enctype="multipart/form-data" action="@Url.Action("Send")">
+    <input type="hidden" name="code" value="@ViewBag.Code" />
+
+    <div class="form-group">
+        <label for="message">Message</label>
+        <textarea name="message" id="message" class="form-control" rows="5" required></textarea>
+    </div>
+
+    <div class="form-group mt-2">
+        <label for="files">Attach files</label>
+        <input type="file" id="files" name="files" multiple class="filepond" />
+    </div>
+
+    <button type="submit" class="btn btn-success mt-3">Submit</button>
+</form>
+
+<script src="https://unpkg.com/filepond-plugin-file-encode/dist/filepond-plugin-file-encode.min.js"></script>
+<script src="https://unpkg.com/filepond-plugin-file-validate-size/dist/filepond-plugin-file-validate-size.min.js"></script>
+<script src="https://unpkg.com/filepond-plugin-image-exif-orientation/dist/filepond-plugin-image-exif-orientation.min.js"></script>
+<script src="https://unpkg.com/filepond-plugin-image-preview/dist/filepond-plugin-image-preview.min.js"></script>
+
+<script src="https://unpkg.com/filepond-plugin-file-validate-type/dist/filepond-plugin-file-validate-type.js"></script>
+<script src="https://unpkg.com/filepond-plugin-file-metadata/dist/filepond-plugin-file-metadata.min.js"></script>
+<script src="https://unpkg.com/filepond/dist/filepond.min.js"></script>
+
+<script>
+    FilePond.registerPlugin(
+        // FilePondPluginFileEncode,
+        FilePondPluginFileMetadata,
+        // FileTypeValidation, 
+        FilePondPluginFileValidateSize,
+        //FilePondPluginImagePreview
+    );
+
+    // Select the file input and use create() to turn it into a pond
+    FilePond.create(
+        document.querySelector('.filepond'),
+        {
+            credits: false,
+            acceptedFileTypes: ['image/*', 'application/pdf'],
+            maxTotalFileSize: "15MB",
+            fileMetadataObject: {
+                userCode: '@ViewBag.Code'
+            }
+        });
+</script>
+
+<script>
+    FilePond.setOptions({
+        @* chunkUploads: true,
+        chunkSize: 2000, *@
+        server: {
+            process: '@Url.Action("process", "FileUpload")',
+            fetch: '@Url.Action("fetch", "FileUpload")',
+            revert: '@Url.Action("revert", "FileUpload")',
+            restore: '@Url.Action("restore", "FileUpload")',
+            load: '@Url.Action("load", "FileUpload")',
+            remove: '@Url.Action("remove", "FileUpload")'
+        },
+    });
+</script>

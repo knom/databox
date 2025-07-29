@@ -1,0 +1,15 @@
+﻿@{
+    ViewData["Title"] = "Start Submission";
+}
+
+<h2>Start Submission</h2>
+
+<form asp-action="Index" asp-asp-controller="Data" method="post">
+    <input name="email" type="email" required placeholder="Enter your email" class="form-control" />
+    <button type="submit" class="btn btn-primary mt-2">Send Code</button>
+</form>
+
+@if (ViewBag.Message != null)
+{
+    <p class="mt-3 text-success">@ViewBag.Message</p>
+}
