@@ -1,34 +1,36 @@
-@tailwind base; 
-@tailwind components; 
-@tailwind utilities;
+/* site.css */
 
-html {
- font-size: 14px;
-}
+/* Import a custom font if needed */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
 
-@media (min-width: 768px) {
-  html {
-    font-size: 16px;
-  }
-}
-
-.btn:focus,
-.btn:active:focus,
-.btn-link.nav-link:focus,
-.form-control:focus,
-.form-check-input:focus {
-  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
-}
-
-html {
-  position: relative;
-  min-height: 100%;
-}
-
+/* Apply your font globally */
 body {
-  margin-bottom: 60px;
+  font-family: 'Inter', system-ui, sans-serif;
 }
 
-img#logo {
-  margin-right: 5px;
+/* Smooth scrolling experience */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Better focus outlines */
+:focus {
+  outline: 2px solid theme('colors.brand.DEFAULT');
+  outline-offset: 2px;
+}
+
+/* Link hover effect */
+a:hover {
+  text-decoration: underline;
+}
+
+/* Hide default file input if using custom component */
+input[type="file"] {
+  display: none;
+}
+
+/* Toast notifications, custom modals, etc. co*
+
+[x-cloak] {
+  display: none !important;
 }

@@ -1,11 +1,14 @@
-<link href="https://unpkg.com/filepond-plugin-image-preview/dist/filepond-plugin-image-preview.min.css" rel="stylesheet" />
-<link href="https://unpkg.com/filepond-plugin-file-poster/dist/filepond-plugin-file-poster.css" rel="stylesheet">
-<link href="https://unpkg.com/filepond/dist/filepond.min.css" rel="stylesheet">
+@{
+    ViewData["Title"] = "Send Documents";
+}
 
+<!-- FilePond CSS -->
+<link href="https://unpkg.com/filepond-plugin-image-preview/dist/filepond-plugin-image-preview.min.css" rel="stylesheet" />
+<link href="https://unpkg.com/filepond-plugin-file-poster/dist/filepond-plugin-file-poster.css" rel="stylesheet" />
+<link href="https://unpkg.com/filepond/dist/filepond.min.css" rel="stylesheet" />
+
+<!-- Optional: Custom FilePond Styling -->
 <style>
-    /**
-    * FilePond Custom Styles
-    */
     .filepond--drop-label {
         color: #4c4e53;
     }
@@ -29,62 +32,76 @@
     }
 </style>
 
-@{
-    ViewData["Title"] = "Send Documents";
-}
-<h2>Send Documents</h2>
+<!-- Main Content -->
+<div class="max-w-2xl mx-auto bg-white p-8 rounded-xl shadow mt-12">
+    <h2 class="text-2xl font-semibold text-gray-800 mb-6 text-center">Send Documents</h2>
 
-<form method="post" enctype="multipart/form-data" action="@Url.Action("Send")">
-    <input type="hidden" name="code" value="@ViewBag.Code" />
+    <form method="post" enctype="multipart/form-data" action="@Url.Action("Send")" class="space-y-6">
+        <input type="hidden" name="code" value="@ViewBag.Code" />
 
-    <div class="form-group">
-        <label for="message">Message</label>
-        <textarea name="message" id="message" class="form-control" rows="5" required></textarea>
-    </div>
+        <div>
+            <label for="message" class="block text-sm font-medium text-gray-700 mb-1">Message</label>
+            <textarea
+                id="message"
+                name="message"
+                rows="5"
+                required
+                class="w-full rounded-lg border border-gray-300 px-4 py-2 focus:ring-brand focus:border-brand"
+            ></textarea>
+        </div>
 
-    <div class="form-group mt-2">
-        <label for="files">Attach files</label>
-        <input type="file" id="files" name="files" multiple class="filepond" />
-    </div>
+        <div>
+            <label for="files" class="block text-sm font-medium text-gray-700 mb-1">Attach files</label>
+            <input
+                type="file"
+                id="files"
+                name="files"
+                multiple
+                class="filepond"
+            />
+        </div>
 
-    <button type="submit" class="btn btn-success mt-3">Submit</button>
-</form>
+        <div>
+            <button
+                type="submit"
+                class="w-full bg-green-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-green-700 transition"
+            >
+                Submit
+            </button>
+        </div>
+    </form>
+</div>
 
+<!-- FilePond JS + Plugins -->
 <script src="https://unpkg.com/filepond-plugin-file-encode/dist/filepond-plugin-file-encode.min.js"></script>
 <script src="https://unpkg.com/filepond-plugin-file-validate-size/dist/filepond-plugin-file-validate-size.min.js"></script>
 <script src="https://unpkg.com/filepond-plugin-image-exif-orientation/dist/filepond-plugin-image-exif-orientation.min.js"></script>
 <script src="https://unpkg.com/filepond-plugin-image-preview/dist/filepond-plugin-image-preview.min.js"></script>
-
 <script src="https://unpkg.com/filepond-plugin-file-validate-type/dist/filepond-plugin-file-validate-type.js"></script>
 <script src="https://unpkg.com/filepond-plugin-file-metadata/dist/filepond-plugin-file-metadata.min.js"></script>
 <script src="https://unpkg.com/filepond/dist/filepond.min.js"></script>
 
+<!-- FilePond Setup -->
 <script>
     FilePond.registerPlugin(
-        // FilePondPluginFileEncode,
         FilePondPluginFileMetadata,
-        // FileTypeValidation, 
         FilePondPluginFileValidateSize,
-        //FilePondPluginImagePreview
+        //FilePondPluginImagePreview,
+        //FilePondPluginFileEncode,
+        FilePondPluginFileValidateType,
+        //FilePondPluginImageExifOrientation
     );
 
-    // Select the file input and use create() to turn it into a pond
-    FilePond.create(
-        document.querySelector('.filepond'),
-        {
-            credits: false,
-            acceptedFileTypes: ['image/*', 'application/pdf'],
-            maxTotalFileSize: "15MB",
-            fileMetadataObject: {
-                userCode: '@ViewBag.Code'
-            }
-        });
-</script>
+    FilePond.create(document.querySelector('.filepond'), {
+        credits: false,
+        acceptedFileTypes: ['image/*', 'application/pdf'],
+        maxTotalFileSize: "15MB",
+        fileMetadataObject: {
+            userCode: '@ViewBag.Code'
+        }
+    });
 
-<script>
     FilePond.setOptions({
-        @* chunkUploads: true,
-        chunkSize: 2000, *@
         server: {
             process: '@Url.Action("process", "FileUpload")',
             fetch: '@Url.Action("fetch", "FileUpload")',
@@ -92,6 +109,7 @@
             restore: '@Url.Action("restore", "FileUpload")',
             load: '@Url.Action("load", "FileUpload")',
             remove: '@Url.Action("remove", "FileUpload")'
-        },
+        }
     });
 </script>
+

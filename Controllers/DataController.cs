@@ -127,5 +127,11 @@ namespace Databox.Controllers
             _logger.LogDebug("View Invalid returned.");
             return View();
         }
+
+        public IActionResult Privacy()
+        {
+            _logger.LogDebug("View Privacy returned.");
+            return View();
+        }
     }
 }
