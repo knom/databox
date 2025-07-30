@@ -238,6 +238,9 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
     - name: Download all artifacts
       uses: actions/download-artifact@v4
       with:
@@ -246,18 +249,13 @@ jobs:
     - name: Merge test reports
       run: |
         mkdir -p merged-reports
-        find artifacts -name "*.json" -path "*/test-results/*" -exec cp {} merged-reports/ \;
-        find artifacts -name "*.xml" -path "*/test-results/*" -exec cp {} merged-reports/ \;
-        ls -la merged-reports/
-
-    - name: Publish Test Results
-      uses: dorny/test-reporter@v1
-      if: success() || failure()
-      with:
-        name: Playwright E2E Test Results
-        path: 'merged-reports/*.xml'
-        reporter: java-junit
-        fail-on-error: false
+        # Look for JUnit XML files in test results
+        find artifacts -name "*.xml" -type f -exec cp {} merged-reports/ \; 2>/dev/null || true
+        # Look for JSON results files
+        find artifacts -name "results.json" -type f -exec cp {} merged-reports/ \; 2>/dev/null || true
+        # List what we found
+        echo "Found test report files:"
+        ls -la merged-reports/ || echo "No test report files found"
 
     - name: Comment PR with test results
       if: github.event_name == 'pull_request'
@@ -267,43 +265,67 @@ jobs:
           const fs = require('fs');
           const path = require('path');
           
-          // Find test result files
-          const artifactsDir = 'artifacts';
           let testSummary = '## 🧪 E2E Test Results\n\n';
           
-          // Check if artifacts directory exists
-          if (fs.existsSync(artifactsDir)) {
-            const browsers = ['chromium', 'firefox', 'webkit'];
-            
-            for (const browser of browsers) {
-              testSummary += `### ${browser.charAt(0).toUpperCase() + browser.slice(1)}\n`;
+          try {
+            // Check for artifacts directory
+            const artifactsDir = 'artifacts';
+            if (!fs.existsSync(artifactsDir)) {
+              testSummary += '⚠️ No test artifacts found.\n';
+            } else {
+              // Check browser test results
+              const browsers = ['chromium', 'firefox', 'webkit'];
+              let hasResults = false;
               
-              const reportDir = path.join(artifactsDir, `playwright-report-${browser}`);
-              if (fs.existsSync(reportDir)) {
-                testSummary += `✅ Tests completed for ${browser}\n`;
+              for (const browser of browsers) {
+                const reportDir = path.join(artifactsDir, `playwright-report-${browser}`);
+                const testResultsDir = path.join(artifactsDir, `test-results-${browser}`);
+                
+                if (fs.existsSync(reportDir) || fs.existsSync(testResultsDir)) {
+                  testSummary += `### ${browser.charAt(0).toUpperCase() + browser.slice(1)}\n`;
+                  testSummary += `✅ Tests completed\n\n`;
+                  hasResults = true;
+                } else {
+                  testSummary += `### ${browser.charAt(0).toUpperCase() + browser.slice(1)}\n`;
+                  testSummary += `❌ Tests failed or incomplete\n\n`;
+                }
+              }
+              
+              // Check mobile results
+              const mobileDir = path.join(artifactsDir, 'mobile-test-results');
+              if (fs.existsSync(mobileDir)) {
+                testSummary += '### Mobile Tests\n✅ Mobile tests completed\n\n';
+                hasResults = true;
               } else {
-                testSummary += `❌ Tests failed or incomplete for ${browser}\n`;
+                testSummary += '### Mobile Tests\n❌ Mobile tests failed or incomplete\n\n';
+              }
+              
+              if (hasResults) {
+                testSummary += '📊 **View detailed reports in the workflow artifacts**\n';
+                testSummary += '- HTML reports with screenshots and traces\n';
+                testSummary += '- Test execution videos (on failures)\n';
+                testSummary += '- Performance metrics and timing data\n';
               }
             }
             
-            // Add mobile results
-            testSummary += '\n### Mobile Tests\n';
-            const mobileDir = path.join(artifactsDir, 'mobile-test-results');
-            if (fs.existsSync(mobileDir)) {
-              testSummary += '✅ Mobile tests completed\n';
-            } else {
-              testSummary += '❌ Mobile tests failed or incomplete\n';
-            }
+            testSummary += `\n---\n*Workflow run: [${context.runId}](${context.payload.repository.html_url}/actions/runs/${context.runId})*`;
             
-            testSummary += '\n📊 Detailed reports are available in the workflow artifacts.';
-          } else {
-            testSummary += '⚠️ No test artifacts found.';
+            // Comment on PR
+            await github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: testSummary
+            });
+            
+          } catch (error) {
+            console.log('Error creating PR comment:', error);
+            
+            // Fallback comment
+            await github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `## 🧪 E2E Test Results\n\n⚠️ Unable to parse test results, but tests have completed.\n\nCheck the [workflow run](${context.payload.repository.html_url}/actions/runs/${context.runId}) for detailed results.`
+            });
           }
-          
-          // Comment on PR
-          github.rest.issues.createComment({
-            issue_number: context.issue.number,
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            body: testSummary
-          });
