@@ -19,7 +19,7 @@ Databox is a lightweight ASP.NET Core MVC application that allows users to verif
 - Automatic cleanup of unverified submissions (Quartz.NET)
 - Dockerized release build
 
-For more details see the [User Stories](USERSTORIES).
+For more details see the [User Stories](USERSTORIES.md).
 
 ## 📦 Running in Docker
 

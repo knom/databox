@@ -7,7 +7,7 @@ COPY . .
 RUN dotnet restore
 
 # Build and publish
-RUN dotnet publish -c Release -o /app/publish
+RUN dotnet publish Databox.csproj -c Release -o /app/publish
 
 # ---- Runtime stage ----
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime

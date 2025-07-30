@@ -1,7 +1,9 @@
 # From .NET Core 3.0 you can use the command: `dotnet new gitignore` to generate a customizable .gitignore file
+node_modules/
 appsettings.Development.json
 uploads/
-node_modules/
+data/
+logs/
 
 *.swp
 *.*~
