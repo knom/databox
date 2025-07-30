@@ -64,36 +64,36 @@ jobs:
           echo "VERSION=$VERSION"
           echo "IS_TAG=$IS_TAG"
 
-         # Always tag and push the full version (either tag or branch name)
-         docker tag $IMAGE_NAME $IMAGE_ID:$VERSION
-         docker push $IMAGE_ID:$VERSION
+          # Always tag and push the full version (either tag or branch name)
+          docker tag $IMAGE_NAME $IMAGE_ID:$VERSION
+          docker push $IMAGE_ID:$VERSION
 
-         if [ "$IS_TAG" = true ]; then
-           # Split version into components
-           IFS='.' read -r MAJOR MINOR PATCH REST <<< "$VERSION"
+          if [ "$IS_TAG" = true ]; then
+            # Split version into components
+            IFS='.' read -r MAJOR MINOR PATCH REST <<< "$VERSION"
 
-           TAGS=("$MAJOR")
-           if [[ -n "$MINOR" ]]; then
-             TAGS+=("$MAJOR.$MINOR")
-           fi
-           if [[ -n "$PATCH" ]]; then
-             TAGS+=("$MAJOR.$MINOR.$PATCH")
-           fi
+            TAGS=("$MAJOR")
+            if [[ -n "$MINOR" ]]; then
+              TAGS+=("$MAJOR.$MINOR")
+            fi
+            if [[ -n "$PATCH" ]]; then
+              TAGS+=("$MAJOR.$MINOR.$PATCH")
+            fi
 
-           for TAG in "${TAGS[@]}"; do
-             echo "Tagging $IMAGE_ID:$TAG"
-             docker tag $IMAGE_NAME $IMAGE_ID:$TAG
-             docker push $IMAGE_ID:$TAG
-           done
+            for TAG in "${TAGS[@]}"; do
+              echo "Tagging $IMAGE_ID:$TAG"
+              docker tag $IMAGE_NAME $IMAGE_ID:$TAG
+              docker push $IMAGE_ID:$TAG
+            done
 
-           # Also tag and push as latest
-           echo "Tagging $IMAGE_ID:latest"
-           docker tag $IMAGE_NAME $IMAGE_ID:latest
-           docker push $IMAGE_ID:latest
+            # Also tag and push as latest
+            echo "Tagging $IMAGE_ID:latest"
+            docker tag $IMAGE_NAME $IMAGE_ID:latest
+            docker push $IMAGE_ID:latest
 
-         elif [ "$VERSION" = "main" ]; then
-           # Tag and push as nightly if branch is main
-           echo "Tagging $IMAGE_ID:nightly"
-           docker tag $IMAGE_NAME $IMAGE_ID:nightly
-           docker push $IMAGE_ID:nightly
-         fi
+          elif [ "$VERSION" = "main" ]; then
+            # Tag and push as nightly if branch is main
+            echo "Tagging $IMAGE_ID:nightly"
+            docker tag $IMAGE_NAME $IMAGE_ID:nightly
+            docker push $IMAGE_ID:nightly
+          fi
