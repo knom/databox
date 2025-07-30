@@ -86,7 +86,6 @@ jobs:
 
     - name: Start .NET application
       run: |
-        cd /workspace/databox
         dotnet run --no-build &
         sleep 10
         echo "Application started on http://localhost:5000"
@@ -100,7 +99,7 @@ jobs:
         
         # Database configuration (use SQLite file for tests)
         ConnectionStrings__DatabaseProvider: sqlite
-        ConnectionStrings__Default: "Data Source=./data/test.db"
+        ConnectionStrings__Default: "Data Source=data/test.db"
         
         # Email configuration (use MailHog)
         Email__SmtpServer: localhost
@@ -114,7 +113,7 @@ jobs:
         Databox__SubmissionMail__SendTo: recipient@example.com
         Databox__SubmissionMail__Subject: "[DataBox Test] New documents Received"
         Databox__VerificationMail__Subject: "[DataBox Test] Your Databox submission"
-        Databox__TempFileStoragePath: ./uploads/
+        Databox__TempFileStoragePath: uploads/
         
         # App configuration
         App__BaseUrl: http://localhost:5000/
@@ -215,7 +214,6 @@ jobs:
 
     - name: Start .NET application
       run: |
-        cd /workspace/databox
         dotnet run --no-build &
         sleep 10
         echo "Application started on http://localhost:5000"
@@ -226,7 +224,7 @@ jobs:
         ASPNETCORE_ENVIRONMENT: Testing
         ASPNETCORE_URLS: http://localhost:5000
         ConnectionStrings__DatabaseProvider: sqlite
-        ConnectionStrings__Default: "Data Source=./data/test-mobile.db"
+        ConnectionStrings__Default: "Data Source=data/test-mobile.db"
         Email__SmtpServer: localhost
         Email__SmtpPort: 1025
         Email__Username: test@example.com
@@ -234,7 +232,7 @@ jobs:
         Email__From: test@databox.com
         Email__Ssl: false
         Databox__SubmissionMail__SendTo: recipient@example.com
-        Databox__TempFileStoragePath: ./uploads/
+        Databox__TempFileStoragePath: uploads/
         App__BaseUrl: http://localhost:5000/
         BASE_URL: http://localhost:5000
         CI: true
