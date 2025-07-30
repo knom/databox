@@ -27,8 +27,8 @@ public class Program
         if (builder.Environment.IsDevelopment())
             builder.Logging.AddDebug();
 
-        string dbProvider = builder.Configuration["DatabaseProvider"] ?? "sqlite";
-        string connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? $"Data Source={dataPath}";
+        string dbProvider = builder.Configuration["ConnectionStrings:DatabaseProvider"] ?? "sqlite";
+        string connectionString = builder.Configuration.GetConnectionString("Default") ?? $"Data Source={dataPath}";
 
         if (!builder.Environment.IsDevelopment())
         {
@@ -36,7 +36,7 @@ public class Program
             builder.Logging.AddFile(options =>
             {
                 options.FileName = "log-"; // The log file prefixes
-                options.IsEnabled = builder.Configuration.GetValue("Logging:FileEnabled", true);
+                options.IsEnabled = builder.Configuration.GetValue("Logging:FileEnabled", false);
                 options.LogDirectory = "logs/";
             });
         }
