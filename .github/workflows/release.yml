@@ -23,10 +23,15 @@ jobs:
         run: |
           dotnet publish Databox.csproj -c Release -o out
 
+      - name: Zip output
+        run: |
+          cd out
+          zip -r ../release_${{ github.ref_name }}.zip .
+
       - name: Create GitHub Release
         uses: ncipollo/release-action@v1
         with:
           name: Release ${{ github.ref_name }}
-          artifacts: out/**
+          artifacts: release_${{ github.ref_name }}.zip
           body: |
             Automated release of version ${{ github.ref_name }}
