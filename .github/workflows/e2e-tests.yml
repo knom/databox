@@ -69,6 +69,9 @@ jobs:
         mkdir -p keys
         mkdir -p logs
         
+        # Clean up any existing test databases
+        rm -f data/test*.db
+        
         # Set permissions
         chmod 755 data uploads keys logs
 
@@ -81,6 +84,13 @@ jobs:
         sleep 2
         echo "MailHog started on port 1025 (SMTP) and 8025 (Web UI)"
 
+    - name: Start .NET application
+      run: |
+        cd /workspace/databox
+        dotnet run --no-build &
+        sleep 10
+        echo "Application started on http://localhost:5000"
+
     - name: Run Playwright tests
       working-directory: tests/e2e
       env:
@@ -88,9 +98,9 @@ jobs:
         ASPNETCORE_ENVIRONMENT: Testing
         ASPNETCORE_URLS: http://localhost:5000
         
-        # Database configuration (use SQLite in-memory for tests)
+        # Database configuration (use SQLite file for tests)
         ConnectionStrings__DatabaseProvider: sqlite
-        ConnectionStrings__Default: "Data Source=:memory:"
+        ConnectionStrings__Default: "Data Source=./data/test.db"
         
         # Email configuration (use MailHog)
         Email__SmtpServer: localhost
@@ -192,6 +202,8 @@ jobs:
     - name: Setup test environment
       run: |
         mkdir -p data uploads keys logs
+        # Clean up any existing test databases
+        rm -f data/test*.db
         chmod 755 data uploads keys logs
 
     - name: Start MailHog
@@ -201,13 +213,20 @@ jobs:
         ./MailHog_linux_amd64 &
         sleep 2
 
+    - name: Start .NET application
+      run: |
+        cd /workspace/databox
+        dotnet run --no-build &
+        sleep 10
+        echo "Application started on http://localhost:5000"
+
     - name: Run Mobile Playwright tests
       working-directory: tests/e2e
       env:
         ASPNETCORE_ENVIRONMENT: Testing
         ASPNETCORE_URLS: http://localhost:5000
         ConnectionStrings__DatabaseProvider: sqlite
-        ConnectionStrings__Default: "Data Source=:memory:"
+        ConnectionStrings__Default: "Data Source=./data/test-mobile.db"
         Email__SmtpServer: localhost
         Email__SmtpPort: 1025
         Email__Username: test@example.com
