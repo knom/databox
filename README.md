@@ -1,4 +1,4 @@
-# Databox
+# Databox [![.NET](https://github.com/knom/databox/actions/workflows/dotnet.yml/badge.svg)](https://github.com/knom/databox/actions/workflows/dotnet.yml)
 
 > One-time verified file and message submission system with email delivery.
 
