@@ -92,6 +92,13 @@ jobs:
       with:
         name: build-artifacts
 
+    - name: Set executable permissions
+      run: |
+        # Set execute permissions on .NET binaries
+        find bin/ -name "*.dll" -o -name "Databox" -o -name "*.exe" | xargs chmod +x 2>/dev/null || true
+        # Set permissions on directories
+        chmod -R 755 bin/ obj/ 2>/dev/null || true
+
     - name: Install E2E test dependencies
       working-directory: tests/e2e
       run: |
@@ -178,6 +185,13 @@ jobs:
       uses: actions/download-artifact@v4
       with:
         name: build-artifacts
+
+    - name: Set executable permissions
+      run: |
+        # Set execute permissions on .NET binaries
+        find bin/ -name "*.dll" -o -name "Databox" -o -name "*.exe" | xargs chmod +x 2>/dev/null || true
+        # Set permissions on directories
+        chmod -R 755 bin/ obj/ 2>/dev/null || true
 
     - name: Install E2E test dependencies
       working-directory: tests/e2e
@@ -266,6 +280,13 @@ jobs:
       with:
         name: build-artifacts
 
+    - name: Set executable permissions
+      run: |
+        # Set execute permissions on .NET binaries
+        find bin/ -name "*.dll" -o -name "Databox" -o -name "*.exe" | xargs chmod +x 2>/dev/null || true
+        # Set permissions on directories
+        chmod -R 755 bin/ obj/ 2>/dev/null || true
+
     - name: Install E2E test dependencies
       working-directory: tests/e2e
       run: |
@@ -352,6 +373,13 @@ jobs:
       uses: actions/download-artifact@v4
       with:
         name: build-artifacts
+
+    - name: Set executable permissions
+      run: |
+        # Set execute permissions on .NET binaries
+        find bin/ -name "*.dll" -o -name "Databox" -o -name "*.exe" | xargs chmod +x 2>/dev/null || true
+        # Set permissions on directories
+        chmod -R 755 bin/ obj/ 2>/dev/null || true
 
     - name: Install E2E test dependencies
       working-directory: tests/e2e
