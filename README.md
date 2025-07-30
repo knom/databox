@@ -125,6 +125,19 @@ docker run -p 8080:8080 \
 The project is developed in .NET 8.0 using ASP.NET MVC Core & Rest APIs.
 It's available under [MIT License](LICENSE)
 
+### 🧪 Testing
+
+The project includes comprehensive end-to-end tests using Playwright:
+
+```bash
+cd tests/e2e
+npm install
+npx playwright install
+npm test
+```
+
+See [E2E Test Documentation](tests/e2e/README.md) for detailed testing information.
+
 ### 📁 Project Structure
 
 ```

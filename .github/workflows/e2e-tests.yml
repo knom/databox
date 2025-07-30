@@ -1,0 +1,281 @@
+name: E2E Tests
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  e2e-tests:
+    timeout-minutes: 60
+    runs-on: ubuntu-latest
+    
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, firefox, webkit]
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 8.0.x
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: tests/e2e/package-lock.json
+
+    - name: Restore .NET dependencies
+      run: dotnet restore
+
+    - name: Build .NET application
+      run: dotnet build --no-restore
+
+    - name: Install E2E test dependencies
+      working-directory: tests/e2e
+      run: npm ci
+
+    - name: Install Playwright browsers
+      working-directory: tests/e2e
+      run: npx playwright install --with-deps ${{ matrix.browser }}
+
+    - name: Setup test environment
+      run: |
+        # Create necessary directories
+        mkdir -p data
+        mkdir -p uploads
+        mkdir -p keys
+        mkdir -p logs
+        
+        # Set permissions
+        chmod 755 data uploads keys logs
+
+    - name: Start MailHog (Mock SMTP server)
+      run: |
+        # Install and start MailHog for email testing
+        wget -q https://github.com/mailhog/MailHog/releases/download/v1.0.1/MailHog_linux_amd64
+        chmod +x MailHog_linux_amd64
+        ./MailHog_linux_amd64 &
+        sleep 2
+        echo "MailHog started on port 1025 (SMTP) and 8025 (Web UI)"
+
+    - name: Run Playwright tests
+      working-directory: tests/e2e
+      env:
+        # Application configuration for testing
+        ASPNETCORE_ENVIRONMENT: Testing
+        ASPNETCORE_URLS: http://localhost:5000
+        
+        # Database configuration (use SQLite in-memory for tests)
+        ConnectionStrings__DatabaseProvider: sqlite
+        ConnectionStrings__Default: "Data Source=:memory:"
+        
+        # Email configuration (use MailHog)
+        Email__SmtpServer: localhost
+        Email__SmtpPort: 1025
+        Email__Username: test@example.com
+        Email__Password: test
+        Email__From: test@databox.com
+        Email__Ssl: false
+        
+        # Databox configuration
+        Databox__SubmissionMail__SendTo: recipient@example.com
+        Databox__SubmissionMail__Subject: "[DataBox Test] New documents Received"
+        Databox__VerificationMail__Subject: "[DataBox Test] Your Databox submission"
+        Databox__TempFileStoragePath: ./uploads/
+        
+        # App configuration
+        App__BaseUrl: http://localhost:5000/
+        
+        # Playwright configuration
+        BASE_URL: http://localhost:5000
+        CI: true
+      run: npx playwright test --project=${{ matrix.browser }}
+
+    - name: Upload Playwright report
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: playwright-report-${{ matrix.browser }}
+        path: tests/e2e/playwright-report/
+        retention-days: 30
+
+    - name: Upload test results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: test-results-${{ matrix.browser }}
+        path: tests/e2e/test-results/
+        retention-days: 30
+
+    - name: Upload screenshots and videos
+      uses: actions/upload-artifact@v4
+      if: failure()
+      with:
+        name: test-artifacts-${{ matrix.browser }}
+        path: |
+          tests/e2e/test-results/
+          tests/e2e/playwright-report/
+        retention-days: 30
+
+  # Job to run mobile tests separately
+  mobile-e2e-tests:
+    timeout-minutes: 30
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 8.0.x
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: tests/e2e/package-lock.json
+
+    - name: Restore .NET dependencies
+      run: dotnet restore
+
+    - name: Build .NET application
+      run: dotnet build --no-restore
+
+    - name: Install E2E test dependencies
+      working-directory: tests/e2e
+      run: npm ci
+
+    - name: Install Playwright browsers
+      working-directory: tests/e2e
+      run: npx playwright install --with-deps chromium
+
+    - name: Setup test environment
+      run: |
+        mkdir -p data uploads keys logs
+        chmod 755 data uploads keys logs
+
+    - name: Start MailHog
+      run: |
+        wget -q https://github.com/mailhog/MailHog/releases/download/v1.0.1/MailHog_linux_amd64
+        chmod +x MailHog_linux_amd64
+        ./MailHog_linux_amd64 &
+        sleep 2
+
+    - name: Run Mobile Playwright tests
+      working-directory: tests/e2e
+      env:
+        ASPNETCORE_ENVIRONMENT: Testing
+        ASPNETCORE_URLS: http://localhost:5000
+        ConnectionStrings__DatabaseProvider: sqlite
+        ConnectionStrings__Default: "Data Source=:memory:"
+        Email__SmtpServer: localhost
+        Email__SmtpPort: 1025
+        Email__Username: test@example.com
+        Email__Password: test
+        Email__From: test@databox.com
+        Email__Ssl: false
+        Databox__SubmissionMail__SendTo: recipient@example.com
+        Databox__TempFileStoragePath: ./uploads/
+        App__BaseUrl: http://localhost:5000/
+        BASE_URL: http://localhost:5000
+        CI: true
+      run: npx playwright test --project="Mobile Chrome" --project="Mobile Safari"
+
+    - name: Upload Mobile test artifacts
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: mobile-test-results
+        path: |
+          tests/e2e/test-results/
+          tests/e2e/playwright-report/
+        retention-days: 30
+
+  # Job to merge and publish test reports
+  publish-results:
+    if: always()
+    needs: [e2e-tests, mobile-e2e-tests]
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Download all artifacts
+      uses: actions/download-artifact@v4
+      with:
+        path: artifacts
+
+    - name: Merge test reports
+      run: |
+        mkdir -p merged-reports
+        find artifacts -name "*.json" -path "*/test-results/*" -exec cp {} merged-reports/ \;
+        find artifacts -name "*.xml" -path "*/test-results/*" -exec cp {} merged-reports/ \;
+        ls -la merged-reports/
+
+    - name: Publish Test Results
+      uses: dorny/test-reporter@v1
+      if: success() || failure()
+      with:
+        name: Playwright E2E Test Results
+        path: 'merged-reports/*.xml'
+        reporter: java-junit
+        fail-on-error: false
+
+    - name: Comment PR with test results
+      if: github.event_name == 'pull_request'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const fs = require('fs');
+          const path = require('path');
+          
+          // Find test result files
+          const artifactsDir = 'artifacts';
+          let testSummary = '## 🧪 E2E Test Results\n\n';
+          
+          // Check if artifacts directory exists
+          if (fs.existsSync(artifactsDir)) {
+            const browsers = ['chromium', 'firefox', 'webkit'];
+            
+            for (const browser of browsers) {
+              testSummary += `### ${browser.charAt(0).toUpperCase() + browser.slice(1)}\n`;
+              
+              const reportDir = path.join(artifactsDir, `playwright-report-${browser}`);
+              if (fs.existsSync(reportDir)) {
+                testSummary += `✅ Tests completed for ${browser}\n`;
+              } else {
+                testSummary += `❌ Tests failed or incomplete for ${browser}\n`;
+              }
+            }
+            
+            // Add mobile results
+            testSummary += '\n### Mobile Tests\n';
+            const mobileDir = path.join(artifactsDir, 'mobile-test-results');
+            if (fs.existsSync(mobileDir)) {
+              testSummary += '✅ Mobile tests completed\n';
+            } else {
+              testSummary += '❌ Mobile tests failed or incomplete\n';
+            }
+            
+            testSummary += '\n📊 Detailed reports are available in the workflow artifacts.';
+          } else {
+            testSummary += '⚠️ No test artifacts found.';
+          }
+          
+          // Comment on PR
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: testSummary
+          });
