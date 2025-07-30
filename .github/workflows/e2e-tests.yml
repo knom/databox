@@ -126,9 +126,28 @@ jobs:
         chmod +x MailHog_linux_amd64
         ./MailHog_linux_amd64 &
         
+        # Wait for MailHog to be ready
+        echo "Waiting for MailHog to start..."
+        for i in {1..30}; do
+          if curl -s http://localhost:8025/api/v1/messages >/dev/null 2>&1; then
+            echo "MailHog is ready"
+            break
+          fi
+          sleep 1
+        done
+        
         # Start .NET application
         dotnet run --no-build &
-        sleep 10
+        
+        # Wait for .NET application to be ready
+        echo "Waiting for .NET application to start..."
+        for i in {1..30}; do
+          if curl -s http://localhost:5000 >/dev/null 2>&1; then
+            echo ".NET application is ready"
+            break
+          fi
+          sleep 1
+        done
         
         # Run tests
         cd tests/e2e
@@ -220,9 +239,28 @@ jobs:
         chmod +x MailHog_linux_amd64
         ./MailHog_linux_amd64 &
         
+        # Wait for MailHog to be ready
+        echo "Waiting for MailHog to start..."
+        for i in {1..30}; do
+          if curl -s http://localhost:8025/api/v1/messages >/dev/null 2>&1; then
+            echo "MailHog is ready"
+            break
+          fi
+          sleep 1
+        done
+        
         # Start .NET application
         dotnet run --no-build &
-        sleep 10
+        
+        # Wait for .NET application to be ready
+        echo "Waiting for .NET application to start..."
+        for i in {1..30}; do
+          if curl -s http://localhost:5000 >/dev/null 2>&1; then
+            echo ".NET application is ready"
+            break
+          fi
+          sleep 1
+        done
         
         # Run tests
         cd tests/e2e
@@ -314,9 +352,28 @@ jobs:
         chmod +x MailHog_linux_amd64
         ./MailHog_linux_amd64 &
         
+        # Wait for MailHog to be ready
+        echo "Waiting for MailHog to start..."
+        for i in {1..30}; do
+          if curl -s http://localhost:8025/api/v1/messages >/dev/null 2>&1; then
+            echo "MailHog is ready"
+            break
+          fi
+          sleep 1
+        done
+        
         # Start .NET application
         dotnet run --no-build &
-        sleep 10
+        
+        # Wait for .NET application to be ready
+        echo "Waiting for .NET application to start..."
+        for i in {1..30}; do
+          if curl -s http://localhost:5000 >/dev/null 2>&1; then
+            echo ".NET application is ready"
+            break
+          fi
+          sleep 1
+        done
         
         # Run tests
         cd tests/e2e
@@ -408,9 +465,28 @@ jobs:
         chmod +x MailHog_linux_amd64
         ./MailHog_linux_amd64 &
         
+        # Wait for MailHog to be ready
+        echo "Waiting for MailHog to start..."
+        for i in {1..30}; do
+          if curl -s http://localhost:8025/api/v1/messages >/dev/null 2>&1; then
+            echo "MailHog is ready"
+            break
+          fi
+          sleep 1
+        done
+        
         # Start .NET application
         dotnet run --no-build &
-        sleep 10
+        
+        # Wait for .NET application to be ready
+        echo "Waiting for .NET application to start..."
+        for i in {1..30}; do
+          if curl -s http://localhost:5000 >/dev/null 2>&1; then
+            echo ".NET application is ready"
+            break
+          fi
+          sleep 1
+        done
         
         # Run tests
         cd tests/e2e

@@ -156,21 +156,37 @@ test.describe('Verification Tests', () => {
     const mockCode = DatabaseHelper.generateMockCode();
     await verifyPage.goto(mockCode);
     
+    // Wait for page to load completely
+    await page.waitForLoadState('networkidle');
+    
     try {
-      // If form is visible, test keyboard navigation
-      await verifyPage.messageTextarea.focus();
-      await expect(verifyPage.messageTextarea).toBeFocused();
+      // Check if we're on a valid verification page first
+      const isFormVisible = await verifyPage.messageTextarea.isVisible({ timeout: 5000 });
       
-      // Tab to next element
-      await page.keyboard.press('Tab');
-      await expect(verifyPage.fileInput).toBeFocused();
-      
-      // Tab to submit button
-      await page.keyboard.press('Tab');
-      await expect(verifyPage.submitButton).toBeFocused();
-    } catch {
-      // If form is not visible, we're on invalid page
-      await invalidPage.expectToBeVisible();
+      if (isFormVisible) {
+        // If form is visible, test keyboard navigation
+        await verifyPage.messageTextarea.focus();
+        await expect(verifyPage.messageTextarea).toBeFocused();
+        
+        // Tab to next element
+        await page.keyboard.press('Tab');
+        await expect(verifyPage.fileInput).toBeFocused();
+        
+        // Tab to submit button
+        await page.keyboard.press('Tab');
+        await expect(verifyPage.submitButton).toBeFocused();
+      } else {
+        // If form is not visible, we're on invalid page
+        await invalidPage.expectToBeVisible();
+      }
+    } catch (error) {
+      console.log('Keyboard navigation test error:', error);
+      // If any error occurs, check if we're on invalid page
+      if (!page.isClosed()) {
+        await invalidPage.expectToBeVisible();
+      } else {
+        throw error;
+      }
     }
   });
 
