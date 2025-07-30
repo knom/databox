@@ -101,6 +101,15 @@ public class Program
             app.UseExceptionHandler("/Home/Error");
             app.UseHsts();
         }
+        else
+        {
+            // In development/testing, use developer exception page for unhandled exceptions
+            // but still handle 404s properly
+            app.UseDeveloperExceptionPage();
+        }
+        
+        // Add status code pages for 404 handling
+        app.UseStatusCodePagesWithReExecute("/Home/Error");
 
         // app.UseHttpsRedirection();
         app.UseStaticFiles();

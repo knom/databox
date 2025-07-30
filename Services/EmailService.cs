@@ -64,7 +64,7 @@ public class EmailService
             using var client = new SmtpClient(_emailSmtpServer, _emailPort)
             {
                 Credentials = new NetworkCredential(_emailUsername, _emailPassword),
-                EnableSsl = true
+                EnableSsl = _emailSsl
             };
 
             var mail = new MailMessage(_emailFrom, toEmail, _verificationEmailSubject, body)

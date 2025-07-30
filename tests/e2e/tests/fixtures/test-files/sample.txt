@@ -1,0 +1,7 @@
+This is a sample text file for testing file uploads in Databox.
+It contains some test content to verify that file uploads work correctly.
+
+Test data:
+- File name: sample.txt
+- File type: text/plain
+- Content: Sample text for testing
