@@ -30,8 +30,14 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: '18'
-        cache: 'npm'
-        cache-dependency-path: tests/e2e/package-lock.json
+
+    - name: Cache node modules
+      uses: actions/cache@v4
+      with:
+        path: tests/e2e/node_modules
+        key: ${{ runner.os }}-node-${{ hashFiles('tests/e2e/package-lock.json', 'tests/e2e/package.json') }}
+        restore-keys: |
+          ${{ runner.os }}-node-
 
     - name: Restore .NET dependencies
       run: dotnet restore
@@ -41,7 +47,15 @@ jobs:
 
     - name: Install E2E test dependencies
       working-directory: tests/e2e
-      run: npm ci
+      run: |
+        # Generate package-lock.json if it doesn't exist, otherwise use npm ci
+        if [ ! -f package-lock.json ]; then
+          echo "package-lock.json not found, running npm install"
+          npm install
+        else
+          echo "package-lock.json found, running npm ci"
+          npm ci
+        fi
 
     - name: Install Playwright browsers
       working-directory: tests/e2e
@@ -144,8 +158,14 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: '18'
-        cache: 'npm'
-        cache-dependency-path: tests/e2e/package-lock.json
+
+    - name: Cache node modules
+      uses: actions/cache@v4
+      with:
+        path: tests/e2e/node_modules
+        key: ${{ runner.os }}-node-${{ hashFiles('tests/e2e/package-lock.json', 'tests/e2e/package.json') }}
+        restore-keys: |
+          ${{ runner.os }}-node-
 
     - name: Restore .NET dependencies
       run: dotnet restore
@@ -155,7 +175,15 @@ jobs:
 
     - name: Install E2E test dependencies
       working-directory: tests/e2e
-      run: npm ci
+      run: |
+        # Generate package-lock.json if it doesn't exist, otherwise use npm ci
+        if [ ! -f package-lock.json ]; then
+          echo "package-lock.json not found, running npm install"
+          npm install
+        else
+          echo "package-lock.json found, running npm ci"
+          npm ci
+        fi
 
     - name: Install Playwright browsers
       working-directory: tests/e2e
