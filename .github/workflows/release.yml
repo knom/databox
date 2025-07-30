@@ -19,4 +19,22 @@ jobs:
 
       - name: Publish app
         run: |
-          do
+          dotnet publish -c Release -o out
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: Release ${{ github.ref_name }}
+          body: |
+            Automated release of version ${{ github.ref_name }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload published artifacts
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            out/**
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
