@@ -13,7 +13,7 @@ namespace Databox.Controllers
         private readonly TempFileStorageService _tempFileStorage;
         private readonly ILogger<DataController> _logger;
 
-        public DataController(DataboxContext db, EmailService email, TempFileStorageService tempFileStorage,ILogger<DataController> logger)
+        public DataController(DataboxContext db, EmailService email, TempFileStorageService tempFileStorage, ILogger<DataController> logger)
         {
             _db = db;
             _email = email;
@@ -21,14 +21,14 @@ namespace Databox.Controllers
             _logger = logger;
         }
 
-        [HttpGet]
+        [HttpGet("/")]
         public IActionResult Index()
         {
             _logger.LogDebug("View Index returned.");
             return View();
         }
 
-        [HttpPost]
+        [HttpPost("/")]
         public async Task<IActionResult> Index(string email)
         {
             try
@@ -40,11 +40,10 @@ namespace Databox.Controllers
                 await _db.SaveChangesAsync();
 
                 await _email.SendVerificationMailAsync(email, submission.Code);
-                ViewBag.Message = "Check your email for a link to continue.";
 
                 _logger.LogInformation("Submission created and code sent to {Email}", email);
 
-                return View();
+                return View("VerificationSent");
             }
             catch (Exception ex)
             {
@@ -53,7 +52,7 @@ namespace Databox.Controllers
             }
         }
 
-        [HttpGet("/Verify")]
+        [HttpGet("/verify")]
         public async Task<IActionResult> Verify(string code)
         {
             try
@@ -77,9 +76,9 @@ namespace Databox.Controllers
             }
         }
 
-        [HttpPost("/Send")]
+        [HttpPost("/send")]
         public async Task<IActionResult> Send(string code, string message, IList<string> files)
-            //List<IFormFile> files not anymore)
+        //List<IFormFile> files not anymore)
         {
             try
             {

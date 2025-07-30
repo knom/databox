@@ -35,7 +35,7 @@ Here's a list of important files / paths that should be mapped for persistence.
 | ----------------------- | ----------------------- |
 | `/app/appsettings.json` | App configuration file  |
 | `/app/data/`            | SQLite database storage |
-| `/app/wwwroot/uploads/` | Temporary user-uploaded files |
+| `/app/uploads/`         | Temporary user-uploaded files |
 | `/app/keys/`            | Anti-Forgery Token keys |
 | `/app/logs/`            | Log file output         |
 | `/app/templates/`       | Email templates         |
@@ -48,6 +48,7 @@ All settings can be configured via `appsettings.json` or environment variables:
 ```json
 {
   "Logging": {
+    "FileEnabled": true,
     "LogLevel": {
       "Default": "Warning",
       "Databox": "Information"
@@ -67,7 +68,8 @@ All settings can be configured via `appsettings.json` or environment variables:
     "VerificationMail": {
       "Subject": "[DataBox] Your Databox submission",
       "Template": "templates/verification-email.template"
-    }
+    },
+    "TempFileStoragePath" : "/tmp/databox-uploads/"
   },
   "Email": {
     "From": "sender@yoursite.com",
@@ -93,15 +95,17 @@ All settings can be configured via `appsettings.json` or environment variables:
 | `Databox.SubmissionMail.Template`    | Path to the Handlebars email template for submissions.           |
 | `Databox.VerificationMail.Subject`   | Subject line for verification email sent to the user.            |
 | `Databox.VerificationMail.Template`  | Path to the Handlebars email template for verification.          |
+| `Databox.TempFileStoragePath`        | Path to where the files will be uploaded temporarily.
 | `Email.From`                         | From address used in outgoing emails.                            |
 | `Email.SmtpServer`                   | SMTP server hostname.                                            |
 | `Email.SmtpPort`                     | SMTP server port (usually 587 for TLS).                          |
 | `Email.Username`                     | SMTP login username.                                             |
 | `Email.Password`                     | SMTP login password.                                             |
 | `Email.Ssl`                          | `"true"` to enable SSL/TLS on SMTP.                              |
-| `ConnectionStrings.DatabaseProvider` | Right now only `"sqlite"` is supported as  provider.                       |
+| `ConnectionStrings.DatabaseProvider` | Right now only `"sqlite"`, `"sqlserver"` and `"postgresql"` is supported as  provider.                       |
 | `ConnectionStrings.Default`          | Database connection string (e.g., `Data Source=data/databox.db`). |
 | `Logging.LogLevel`                   | Controls logging verbosity (for Databox and the rest).                                      |
+| `Logging.FileEnabled`                   | Controls whether file log to log/log-xx.txt is written.       |
 
 
 ## 🐳 Override Config via Docker

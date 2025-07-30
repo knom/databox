@@ -29,23 +29,20 @@ public class EmailService
         _appBaseUrl = config["App:BaseUrl"] ?? throw new ArgumentException("App:BaseUrl not configured");
 
         _emailSmtpServer = config["Email:SmtpServer"] ?? throw new ArgumentException("Email:SmtpServer not configured");
-        _emailPort = int.Parse(config["Email:SmtpPort"] ?? "587");
+        _emailPort = config.GetValue("Email:SmtpPort", 587); // Default to 587 if not configured
 
         _emailUsername = config["Email:Username"] ?? throw new ArgumentException("Email:Username not configured");
         _emailPassword = config["Email:Password"] ?? throw new ArgumentException("Email:Password not configured");
 
-        _emailFrom = config["Email:From"] ?? throw new ArgumentException("Email:From not configured");
+        _emailFrom = config["Email:From"] ?? _emailUsername ?? throw new ArgumentException("Email:From not configured");
 
         _verificationEmailSubject = config["Databox:VerificationMail:Subject"] ?? "[DataBox] Your Databox submission";
         _verificationEmailTemplate = config["Databox:VerificationMail:Template"] ?? "templates/verification-email.template";
 
-        if (bool.TryParse(config["Email:Ssl"], out bool emailSsl))
-            _emailSsl = emailSsl;
-        else
-            _emailSsl = true;
+        _emailSsl = config.GetValue("Email:Ssl", true);
 
         _submissionEmailSubject = config["Databox:SubmissionMail:Subject"] ?? "[DataBox] New documents Received";
-        _submissionEmailTo = config["Databox:SubmissionMail:SendTo"] ?? throw new ArgumentException("Databox:SubmissionMail:SendTo not configured");
+        _submissionEmailTo = config["Databox:SubmissionMail:SendTo"] ?? _emailFrom ?? throw new ArgumentException("Databox:SubmissionMail:SendTo not configured");
 
         _submissionEmailTemplate = config["Databox:SubmissionMail:Template"] ?? "templates/submission-email.template";
     }
@@ -56,7 +53,7 @@ public class EmailService
 
         var data = new
         {
-            Link = $"{_appBaseUrl.TrimEnd('/')}/Verify?code={code}"
+            Link = $"{_appBaseUrl.TrimEnd('/')}/verify?code={code}"
         };
 
         try

@@ -4,12 +4,15 @@ namespace Databox.Services;
 
 public class TempFileStorageService
 {
-    private readonly string _tempPath = Path.Combine("wwwroot", "uploads", "tmp");
-    
+    private readonly string _tempPath = "";
     private readonly ILogger<TempFileStorageService> _logger;
 
-    public TempFileStorageService(ILogger<TempFileStorageService> logger)
+    public TempFileStorageService(IConfiguration configuration, ILogger<TempFileStorageService> logger)
     {
+        _tempPath = configuration["Databox:TempFileStoragePath"] ?? Path.Combine(AppContext.BaseDirectory, "uploads");
+
+        logger.LogDebug("Using temporary file storage path: {TempPath}", _tempPath);
+
         Directory.CreateDirectory(_tempPath);
         
         _logger = logger;
@@ -72,6 +75,8 @@ public class TempFileStorageService
 
     public IEnumerable<Guid> GetExpiredFolderIds(DateTime dateTime)
     {
+        _logger.LogDebug("Retrieving expired folder IDs before {DateTime}", dateTime);
+        
         return Directory.GetDirectories(_tempPath)
             .Where(file => Directory.GetCreationTime(file) <= dateTime) // or use File.GetLastWriteTime(file)
             .Select(p => Guid.Parse(Path.GetFileName(p)));

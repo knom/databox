@@ -7,6 +7,7 @@ using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Quartz;
+using Npgsql.EntityFrameworkCore.PostgreSQL;
 
 namespace Databox;
 
@@ -35,6 +36,7 @@ public class Program
             builder.Logging.AddFile(options =>
             {
                 options.FileName = "log-"; // The log file prefixes
+                options.IsEnabled = builder.Configuration.GetValue("Logging:FileEnabled", true);
                 options.LogDirectory = "logs/";
             });
         }
@@ -122,53 +124,11 @@ public class Program
             case "sqlite":
                 options.UseSqlite(connString);
                 break;
+            case "postgresql":
+                options.UseNpgsql(connString);
+                break;
             default:
-                throw new Exception("Unsupported provider");
+                throw new Exception($"Unsupported provider: {provider}");
         }
-    }
-
-    static void CreateDatabaseFile(IServiceProvider services, IConfiguration configuration, ILogger logger)
-    {
-        using var scope = services.CreateScope();
-        var db = scope.ServiceProvider.GetRequiredService<DataboxContext>();
-        var provider = configuration["ConnectionStrings:DatabaseProvider"]?.ToLower();
-        var connString = configuration.GetConnectionString("DefaultConnection") ?? "";
-
-        if (provider == "sqlite")
-        {
-            // Extract the path from the connection string
-            var path = ExtractSqlitePath(connString);
-            if (string.IsNullOrEmpty(path))
-            {
-                logger.LogError("SQLite connection string does not specify a Data Source.");
-                return;
-            }
-            
-            logger.LogInformation("SQLite database file: {DatabasePath}", Path.GetFullPath(path));
-
-            logger.LogInformation("Ensuring SQLite database file exists...");
-            if (db.Database.EnsureCreated())
-            {
-                logger.LogInformation("Database created.");
-            }
-            else
-            {
-                logger.LogInformation("Database already exists.");
-            }
-        }
-    }
-
-    static string? ExtractSqlitePath(string connectionString)
-    {
-        var parts = connectionString.Split(';', StringSplitOptions.RemoveEmptyEntries);
-        foreach (var part in parts)
-        {
-            var trimmed = part.Trim();
-            if (trimmed.StartsWith("Data Source=", StringComparison.OrdinalIgnoreCase))
-            {
-                return trimmed.Substring("Data Source=".Length).Trim();
-            }
-        }
-        return null;
     }
 }
