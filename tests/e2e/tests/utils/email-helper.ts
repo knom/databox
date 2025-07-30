@@ -3,6 +3,20 @@
  * Since we can't easily intercept real emails in E2E tests,
  * we'll provide utilities to work with the verification flow
  */
+export async function expectEmailToBeSent(emailTo: string, timeout = 10000, interval = 500) {
+  const startTime = Date.now();
+
+  while (Date.now() - startTime < timeout) {
+    const lastEmail = await MailHogEmailService.getLastEmailTo(emailTo);
+    if (lastEmail) {
+      MailHogEmailService.clear();
+      return lastEmail;
+    }
+    await new Promise(res => setTimeout(res, interval));
+  }
+
+  throw new Error(`No email found sent to "${emailTo}" within ${timeout}ms`);
+}
 
 export class EmailHelper {
   /**
@@ -31,38 +45,57 @@ export class EmailHelper {
   }
 }
 
-/**
- * Mock email service for testing
- * In a real scenario, you might use a service like MailHog or similar
- */
-export class MockEmailService {
-  private static sentEmails: Array<{
-    to: string;
-    subject: string;
+import fetch from 'node-fetch';
+interface MailHogEmail {
+  id: string;
+  from: { mailbox: string; domain: string; params?: any };
+  to: Array<{ mailbox: string; domain: string; params?: any }>;
+  content: {
+    headers: Record<string, string[]>;
     body: string;
-    timestamp: Date;
-  }> = [];
+  };
+  created: string; // timestamp string
+}
 
-  static addSentEmail(to: string, subject: string, body: string) {
-    this.sentEmails.push({
-      to,
+export class MailHogEmailService {
+  private static mailHogApiUrl = 'http://localhost:8025/api/v2/messages';
+
+  // Fetch all emails from MailHog
+  static async getAllEmails() {
+    const response = await fetch(this.mailHogApiUrl);
+    const data = await response.json();
+    return data.items as MailHogEmail[];
+  }
+
+  // Get last email sent TO a specific email address
+  static async getLastEmailTo(email: string) {
+    const allEmails = await this.getAllEmails();
+    // Filter emails that have 'to' matching the email param
+    const filtered = allEmails.filter(msg =>
+      msg.to.some(recipient => `${recipient.mailbox}@${recipient.domain}` === email)
+    );
+
+    if (filtered.length === 0) return null;
+
+    // Sort descending by creation timestamp
+    filtered.sort((a, b) => new Date(b.created).getTime() - new Date(a.created).getTime());
+
+    const latest = filtered[0];
+
+    // Extract subject and body from headers and content
+    const subject = latest.content.headers['Subject'] ? latest.content.headers['Subject'][0] : '(no subject)';
+    const body = latest.content.body;
+
+    return {
+      to: email,
       subject,
       body,
-      timestamp: new Date()
-    });
+      timestamp: new Date(latest.created),
+    };
   }
 
-  static getLastEmailTo(email: string) {
-    return this.sentEmails
-      .filter(e => e.to === email)
-      .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())[0];
-  }
-
-  static clear() {
-    this.sentEmails = [];
-  }
-
-  static getAllEmails() {
-    return [...this.sentEmails];
+  // Clear all emails in MailHog by calling the API to delete messages
+  static async clear() {
+    await fetch(`${this.mailHogApiUrl}`, { method: 'DELETE' });
   }
 }
