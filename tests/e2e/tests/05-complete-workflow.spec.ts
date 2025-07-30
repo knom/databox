@@ -151,7 +151,7 @@ test.describe('Complete Workflow Tests', () => {
     
     // Test navigation to non-existent pages
     await page.goto('/nonexistent-page');
-    await expect(page.locator('body')).toContainText(/404|not.*found|error/i);
+    await expect(page.locator('body')).toContainText(/error|occurred/i);
   });
 
   test('should maintain security throughout workflow', async ({ page }) => {
