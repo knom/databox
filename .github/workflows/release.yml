@@ -1,0 +1,22 @@
+name: Publish Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'  # Trigger on version tags like v1.2.3
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Publish app
+        run: |
+          do
