@@ -77,10 +77,10 @@ export default defineConfig({
   ],
 
   /* Run your local dev server before starting the tests */
-  webServer: {
+  webServer: process.env.CI ? undefined : {
     command: 'dotnet run --project ../../Databox.csproj --urls http://localhost:5000',
     url: 'http://localhost:5000',
-    reuseExistingServer: !process.env.CI,
+    reuseExistingServer: true,
     timeout: 120 * 1000, // 2 minutes
     env: {
       ASPNETCORE_ENVIRONMENT: 'Development',
