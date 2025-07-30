@@ -45,7 +45,6 @@ export class EmailHelper {
   }
 }
 
-import fetch from 'node-fetch';
 interface MailHogEmail {
   id: string;
   from: { mailbox: string; domain: string; params?: any };
