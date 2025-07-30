@@ -6,12 +6,12 @@ using Quartz;
 
 namespace Databox.Jobs
 {
-    public class CleanupJob : IJob
+    public class SubmissionCleanupJob : IJob
     {
         private readonly DataboxContext _db;
-        private readonly ILogger<CleanupJob> _logger;
+        private readonly ILogger<SubmissionCleanupJob> _logger;
 
-        public CleanupJob(DataboxContext db, ILogger<CleanupJob> logger)
+        public SubmissionCleanupJob(DataboxContext db, ILogger<SubmissionCleanupJob> logger)
         {
             _db = db;
             _logger = logger;
@@ -19,18 +19,16 @@ namespace Databox.Jobs
 
         public async Task Execute(IJobExecutionContext context)
         {
-            _logger.LogDebug("CleanupJob started at {Time}", DateTime.UtcNow);
+            _logger.LogDebug("{job} started at {Time}", nameof(SubmissionCleanupJob), DateTime.UtcNow);
 
             try
             {
                 var threshold = DateTime.UtcNow.AddHours(-48);
                 _logger.LogDebug("Threshold for expired submissions: {Threshold}", threshold);
 
-                var expired = await _db.Submissions
+                var expired = _db.Submissions
                     .Where(s => !s.Claimed && s.CreatedAt < threshold)
-                    .ToListAsync();
-
-                _logger.LogInformation("Found {Count} expired submissions to remove", expired.Count);
+                    .ToList();
 
                 if (expired.Any())
                 {
@@ -40,19 +38,19 @@ namespace Databox.Jobs
                 }
                 else
                 {
-                    _logger.LogInformation("No expired submissions found to remove");
+                    _logger.LogDebug("No expired submissions found to remove");
                 }
             }
             catch (DbException ex)
             {
-                _logger.LogError(ex, "Database error occurred during CleanupJob execution");
+                _logger.LogError(ex, "Database error occurred during {job} execution", nameof(SubmissionCleanupJob));
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Unexpected error occurred during CleanupJob execution");
+                _logger.LogError(ex, "Unexpected error occurred during {job} execution", nameof(SubmissionCleanupJob));
             }
 
-            _logger.LogDebug("CleanupJob finished at {Time}", DateTime.UtcNow);
+            _logger.LogDebug("{job} finished at {Time}", nameof(SubmissionCleanupJob), DateTime.UtcNow);
         }
     }
 }

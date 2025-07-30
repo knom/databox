@@ -50,13 +50,13 @@ public class Program
 
         builder.Services.AddQuartz(q =>
         {
-            var jobKey = new JobKey("SubmissionCleanup");
-            q.AddJob<CleanupJob>(opts => opts.WithIdentity(jobKey));
+            var jobKey = new JobKey("SubmissionCleanupJob");
+            q.AddJob<SubmissionCleanupJob>(opts => opts.WithIdentity(jobKey));
             q.AddTrigger(t => t
                 .ForJob(jobKey)
-                .WithIdentity("CleanupTrigger")
+                .WithIdentity("SubmissionCleanupJobTrigger")
                 .WithSimpleSchedule(s => s
-                    .WithIntervalInHours(2)
+                    .WithIntervalInHours(1)
                     .RepeatForever())
             );
 
@@ -64,7 +64,7 @@ public class Program
             q.AddJob<FileUploadCleanupJob>(opts => opts.WithIdentity(jobKey));
             q.AddTrigger(t => t
                 .ForJob(jobKey)
-                .WithIdentity("FileUploadCleanupJob")
+                .WithIdentity("FileUploadCleanupJobTrigger")
                 .WithSimpleSchedule(s => s
                     .WithIntervalInMinutes(10)
                     .RepeatForever())
@@ -138,6 +138,12 @@ public class Program
         {
             // Extract the path from the connection string
             var path = ExtractSqlitePath(connString);
+            if (string.IsNullOrEmpty(path))
+            {
+                logger.LogError("SQLite connection string does not specify a Data Source.");
+                return;
+            }
+            
             logger.LogInformation("SQLite database file: {DatabasePath}", Path.GetFullPath(path));
 
             logger.LogInformation("Ensuring SQLite database file exists...");
