@@ -1,9 +1,26 @@
-import { test, expect } from '@playwright/test';
+import { baseTest, expect } from '@playwright/test';
 import { HomePage } from './pages/HomePage';
 import { VerificationSentPage } from './pages/VerificationSentPage';
 import { VerifyPage } from './pages/VerifyPage';
 import { DonePage } from './pages/DonePage';
 import { InvalidPage } from './pages/InvalidPage';
+
+
+const test = baseTest.extend({
+  contextOptions: async ({ browserName }, use) => {
+    if (browserName === 'chromium' || browserName === 'webkit') {
+      await use({
+        viewport: { width: 375, height: 667 },
+        hasTouch: true,
+        isMobile: true,
+      });
+    } else {
+      // Firefox or others: no special options
+      await use({});
+    }
+  }
+});
+
 
 test.describe('Complete Workflow Tests', () => {
   let homePage: HomePage;
@@ -231,12 +248,6 @@ test.describe('Complete Workflow Tests', () => {
       // Network errors are expected in this test
       expect(true).toBeTruthy();
     }
-  });
-
-  test.use({
-    viewport: { width: 375, height: 667 }, // e.g. iPhone 8 size
-    hasTouch: true,
-    isMobile: true,
   });
 
   test('should handle mobile workflow', async ({ page }) => {

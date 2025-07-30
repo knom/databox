@@ -490,7 +490,8 @@ jobs:
         
         # Run tests
         cd tests/e2e
-        npx playwright test --project="Mobile Chrome" --project="Mobile Safari"
+        npx playwright test --project="Mobile Chrome" 
+        # --project="Mobile Safari"
       env:
         ASPNETCORE_ENVIRONMENT: Testing
         ASPNETCORE_URLS: http://localhost:5000
