@@ -6,52 +6,28 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - Databox</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="~/css/site.r.css" />
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        brand: {
-                            DEFAULT: '#3b82f6',
-                            dark: '#1e40af',
-                        },
-                        background: {
-                            gradientStart: '#ebf8ff',
-                            gradientEnd: '#ede9fe',
-                        }
-                    },
-                    boxShadow: {
-                        soft: '0 4px 12px rgba(0, 0, 0, 0.05)',
-                    },
-                    fontFamily: {
-                        sans: ['Inter', 'ui-sans-serif', 'system-ui']
-                    }
-                }
-            }
-        };
-    </script>
     <link rel="icon" type="image/png" href="~/databox-icon.png" />
 </head>
 
-<body class="bg-gradient-to-br from-background-gradientStart to-background-gradientEnd text-gray-800 font-sans min-h-screen flex flex-col">
+<body class="bg-linear-to-br from-background-gradientStart to-background-gradientEnd text-gray-800 font-sans min-h-screen flex flex-col">
 
     <!-- Header -->
     <header>
-        <nav class="bg-white border-b shadow relative">
+        <nav class="bg-white border-b border-gray-200 shadow relative">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8" x-data="{ open: false }">
                 <div class="flex justify-between h-16">
                     <div class="flex items-center">
                         <a asp-area="" asp-controller="Data" asp-action="Index" class="flex items-center space-x-2">
                             <img src="~/databox-icon.png" alt="Logo" class="h-8 w-8" />
-                            <span class="text-xl font-semibold">Databox</span>
+                            <span class="text-xl font-semibold">Databox</span>  
                         </a>
                     </div>
                     <div class="flex items-center sm:hidden">
                         <!-- Hamburger -->
-                        <button x-on:click="open = !open" class="text-gray-600 focus:outline-none">
+                        <button x-on:click="open = !open" class="text-gray-600">
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"
                                 xmlns="http://www.w3.org/2000/svg">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -75,7 +51,7 @@
                     x-transition
                 >
                     <a asp-area="" asp-controller="Data" asp-action="Index"
-                        class="block px-4 py-3 text-gray-700 hover:text-blue-600 border-b">Home</a>
+                        class="block px-4 py-3 text-gray-700 hover:text-blue-600 border-b border-gray-200">Home</a>
                     <a asp-area="" asp-controller="Data" asp-action="Privacy"
                         class="block px-4 py-3 text-gray-700 hover:text-blue-600">Privacy</a>
                 </div>
@@ -91,7 +67,7 @@
     </main>
 
     <!-- Footer -->
-    <footer class="text-sm text-gray-500 text-center p-4 border-t">
+    <footer class="text-sm text-gray-500 text-center p-4 border-t border-gray-200">
         &copy; 2025 - Databox - <a asp-area="" asp-controller="Data" asp-action="Privacy" class="hover:text-gray-700">Privacy</a>
     </footer>
 

@@ -15,13 +15,20 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
+    - name: Checkout code
+      uses: actions/checkout@v4
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: 8.0.x
-    - name: Restore dependencies
+    - name: Setup Node/NPM
+      uses: actions/setup-node@v4
+      with:
+        node-version: 19.x
+    - name: Restore .NET dependencies
       run: dotnet restore
+    - name: Restore NPM dependencies
+      run: npm install
     - name: Build
       run: dotnet build --no-restore
     - name: Test
