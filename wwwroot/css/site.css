@@ -1,11 +1,21 @@
 /* site.css */
+@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-/* Import a custom font if needed */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
+@custom-variant hover (&:hover);
+
+@theme {
+  --color-brand: #3b82f6;
+  --color-brand-dark: #1e40af;
+  --color-background-gradientStart: #ebf8ff;
+  --color-background-gradientEnd: #ede9fe;
+  --shadow-soft: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
 
 /* Apply your font globally */
 body {
-  font-family: 'Inter', system-ui, sans-serif;
 }
 
 /* Smooth scrolling experience */
@@ -14,15 +24,15 @@ html {
 }
 
 /* Better focus outlines */
-:focus {
-  outline: 2px solid theme('colors.brand.DEFAULT');
+/* :focus {
+  outline: 2px solid var(--color-brand);
   outline-offset: 2px;
-}
+} */
 
 /* Link hover effect */
-a:hover {
+/* a:hover {
   text-decoration: underline;
-}
+} */
 
 /* Hide default file input if using custom component */
 input[type="file"] {
