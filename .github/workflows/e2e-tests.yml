@@ -171,8 +171,8 @@ jobs:
         Email__From: test@databox.com
         Email__Ssl: false
         Databox__SubmissionMail__SendTo: recipient@example.com
-        Databox__SubmissionMail__Subject: "[DataBox Test] New documents Received"
-        Databox__VerificationMail__Subject: "[DataBox Test] Your Databox submission"
+        Databox__SubmissionMail__Subject: "[Databox Test] New documents Received"
+        Databox__VerificationMail__Subject: "[Databox Test] Your Databox submission"
         Databox__TempFileStoragePath: uploads/
         App__BaseUrl: http://localhost:5050/
         BASE_URL: http://localhost:5050
