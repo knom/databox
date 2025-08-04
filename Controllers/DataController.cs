@@ -91,9 +91,10 @@ namespace Databox.Controllers
                     return View("Invalid");
                 }
 
-                var files2 = files.Select(p => _tempFileStorage.GetFile(Guid.Parse(p)));
+                var nonNullFiles = files.Where(p => !String.IsNullOrEmpty(p));
+                var formFiles = nonNullFiles.Select(p => _tempFileStorage.GetFile(Guid.Parse(p)));
 
-                await _email.SendDataMailAsync(submission.Email, message, files2);
+                await _email.SendDataMailAsync(submission.Email, message, formFiles);
                 _logger.LogInformation("Data sent from {Email} (Code: {Code})", submission.Email, code);
 
                 _db.Submissions.Remove(submission);
@@ -101,7 +102,7 @@ namespace Databox.Controllers
                 _logger.LogDebug("Submission removed for code: {Code} - email: {email}", code, submission.Email);
 
                 _logger.LogDebug("Removing temporary files");
-                foreach (var guid in files.Select(Guid.Parse))
+                foreach (var guid in nonNullFiles.Select(Guid.Parse))
                 {
                     _tempFileStorage.DeleteFile(guid);
                 }
