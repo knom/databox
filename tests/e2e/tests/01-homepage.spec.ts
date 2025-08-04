@@ -42,7 +42,7 @@ test.describe('Homepage Tests', () => {
     await verificationSentPage.expectVerificationSentMessage();
 
     const email = await expectEmailToBeSent(mailHog, testEmail);
-    expect(email.Content.Headers.Subject).toContain('[DataBox] Your Databox submission');
+    expect(email.Content.Headers.Subject).toContain('[Databox Test] Your Databox submission');
     const body = Buffer.from(email.Content.Body, 'base64').toString('utf-8');
     expect(body).toContain('Click this link to complete your submission:');
   });
@@ -60,7 +60,7 @@ test.describe('Homepage Tests', () => {
       await verificationSentPage.expectToBeVisible();
 
       const verificationMail = await expectEmailToBeSent(mailHog, email);
-      expect(verificationMail.Content.Headers.Subject).toContain('[DataBox] Your Databox submission');
+      expect(verificationMail.Content.Headers.Subject).toContain('[DataBox Test] Your Databox submission');
       const body = Buffer.from(verificationMail.Content.Body, 'base64').toString('utf-8');
       expect(body).toContain('Click this link to complete your submission:');
     }
@@ -111,7 +111,7 @@ test.describe('Homepage Tests', () => {
       await verificationSentPage.expectToBeVisible();
 
       const verificationMail = await expectEmailToBeSent(mailHog, email);
-      expect(verificationMail.Content.Headers.Subject).toContain('[DataBox] Your Databox submission');
+      expect(verificationMail.Content.Headers.Subject).toContain('[DataBox Test] Your Databox submission');
       const body = Buffer.from(verificationMail.Content.Body, 'base64').toString('utf-8');
       expect(body).toContain('Click this link to complete your submission:');
     }
@@ -124,7 +124,7 @@ test.describe('Homepage Tests', () => {
     await verificationSentPage.expectToBeVisible();
 
     const verificationMail = await expectEmailToBeSent(mailHog, longEmail);
-    expect(verificationMail.Content.Headers.Subject).toContain('[DataBox] Your Databox submission');
+    expect(verificationMail.Content.Headers.Subject).toContain('[Databox Test] Your Databox submission');
     const body = Buffer.from(verificationMail.Content.Body, 'base64').toString('utf-8');
     expect(body).toContain('Click this link to complete your submission:');
   });
@@ -146,7 +146,7 @@ test.describe('Homepage Tests', () => {
     await verificationSentPage.expectToBeVisible();
 
     const verificationMail = await expectEmailToBeSent(mailHog, email);
-    expect(verificationMail.Content.Headers.Subject).toContain('[DataBox] Your Databox submission');
+    expect(verificationMail.Content.Headers.Subject).toContain('[Databox Test] Your Databox submission');
     const body = Buffer.from(verificationMail.Content.Body, 'base64').toString('utf-8');
     expect(body).toContain('Click this link to complete your submission:');
   });
@@ -161,7 +161,7 @@ test.describe('Homepage Tests', () => {
     await verificationSentPage.expectToBeVisible();
 
     const verificationMail = await expectEmailToBeSent(mailHog, email);
-    expect(verificationMail.Content.Headers.Subject).toContain('[DataBox] Your Databox submission');
+    expect(verificationMail.Content.Headers.Subject).toContain('[DataBox Test] Your Databox submission');
     const body = Buffer.from(verificationMail.Content.Body, 'base64').toString('utf-8');
     expect(body).toContain('Click this link to complete your submission:');
   });
