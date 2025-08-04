@@ -11,10 +11,12 @@
     "install": "playwright install"
   },
   "devDependencies": {
-    "@playwright/test": "^1.40.0",
-    "@types/node": "^20.0.0"
+    "@playwright/test": "^1.54.2",
+    "@types/node": "^20.0.0",
+    "mailhog": "^4.16.0"
   },
   "dependencies": {
-    "dotenv": "^16.3.1"
+    "dotenv": "^16.3.1",
+    "filepond": "^4.32.8"
   }
 }

@@ -1,4 +1,5 @@
 import { Page, Locator, expect } from '@playwright/test';
+import { FilePond } from 'filepond';
 import path from 'path';
 
 export class VerifyPage {
@@ -32,7 +33,7 @@ export class VerifyPage {
   }
 
   async uploadMultipleFiles(fileNames: string[]) {
-    const filePaths = fileNames.map(fileName => 
+    const filePaths = fileNames.map(fileName =>
       path.join(__dirname, '..', 'fixtures', 'test-files', fileName)
     );
     await this.fileInput.setInputFiles(filePaths);
@@ -44,11 +45,11 @@ export class VerifyPage {
 
   async submitForm(message: string, fileNames?: string[]) {
     await this.fillMessage(message);
-    
+
     if (fileNames && fileNames.length > 0) {
       await this.uploadMultipleFiles(fileNames);
     }
-    
+
     await this.clickSubmit();
   }
 
@@ -74,26 +75,37 @@ export class VerifyPage {
     expect(codeValue?.length).toBeGreaterThan(10); // Should be a reasonable length code
   }
 
+  async expectCodeToBe(guid: string) {
+    await expect(this.codeInput).toBeHidden(); // Hidden input with code
+    const codeValue = await this.codeInput.getAttribute('value');
+    expect(codeValue).toBeTruthy();
+    expect(codeValue).toBe(guid); // should be guid
+  }
+
   async waitForFilePondToLoad() {
     // Wait for FilePond to initialize
+    // Wait until FilePond is defined
     await this.page.waitForFunction(() => {
-      return window.FilePond !== undefined;
-    }, { timeout: 10000 });
-    
-    // Wait a bit more for FilePond to fully initialize
-    await this.page.waitForTimeout(1000);
+      return (window as any).FilePond !== undefined;
+    });
+  }
+
+  async expectFilePondToBePresent() {
+    // Optional assertion
+    const isLoaded = await this.page.evaluate(() => typeof (window as any).FilePond === 'object');
+
+    expect(isLoaded).toBe(true);
   }
 
   async uploadFileWithFilePond(fileName: string) {
     await this.waitForFilePondToLoad();
-    
+
     const filePath = path.join(__dirname, '..', 'fixtures', 'test-files', fileName);
-    
+
     // FilePond creates its own file input, so we need to find it
     const filePondInput = this.page.locator('.filepond--browser');
     await filePondInput.setInputFiles(filePath);
-    
-    // Wait for file to be processed
+
     await this.page.waitForSelector('.filepond--item', { timeout: 10000 });
   }
 
@@ -101,5 +113,33 @@ export class VerifyPage {
     // Check if file appears in FilePond
     await expect(this.page.locator('.filepond--item')).toBeVisible();
     await expect(this.page.locator('.filepond--file-info-main')).toContainText(fileName);
+
+    const serverId = await this.page.evaluate(() => {
+      const pond = ((FilePond as any).find(document.querySelector('.filepond')) as FilePond);
+      if (!pond)
+        return null;
+
+      const file = pond.getFiles().find(file => file.filename === fileName);
+
+      expect(file).toBeDefined();
+      expect(file?.serverId).toBeDefined();
+
+      return file?.serverId;
+    });
+  }
+
+  async waitForFileToBeUploaded(fileName: string) {
+    // Wait until serverId for the fileName exists in FilePond instance
+    await this.page.waitForFunction(
+      (fileName: string) => {
+        const pond = (window as any).FilePond.find(document.querySelector('.filepond'));
+        if (!pond)
+          return false;
+
+        const file = pond.getFiles().find((f: any) => f.filename === fileName);
+        return !!(file && file.status == 5);
+      },
+      fileName // Pass `fileName` as argument to the page context
+    );
   }
 }

@@ -1,24 +1,13 @@
-/**
- * Database helper utilities for testing
- * These utilities help with database operations during testing
- */
+import { Submission } from "./Submission";
 
-export interface Submission {
-  id: number;
-  email: string;
-  code: string;
-  claimed: boolean;
-  createdAt: Date;
-}
 
-export class DatabaseHelper {
+export class DataHelper {
   /**
    * Generate a mock verification code (similar to what the app would generate)
    */
   static generateMockCode(): string {
     // Generate a random 32-character hex string (similar to GUID format)
-    return Array.from({ length: 32 }, () => 
-      Math.floor(Math.random() * 16).toString(16)
+    return Array.from({ length: 32 }, () => Math.floor(Math.random() * 16).toString(16)
     ).join('');
   }
 

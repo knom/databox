@@ -1,16 +1,21 @@
 import { test, expect } from '@playwright/test';
 import { HomePage } from './pages/HomePage';
 import { VerificationSentPage } from './pages/VerificationSentPage';
-import { expectEmailToBeSent, MailHogEmailService } from './utils/email-helper';
+import { expectEmailToBeSent, MailHogEmailService } from './utils/EmailHelper';
 
 test.describe('Homepage Tests', () => {
   let homePage: HomePage;
   let verificationSentPage: VerificationSentPage;
+  let mailHog: MailHogEmailService;
 
   test.beforeEach(async ({ page }) => {
+    mailHog = new MailHogEmailService();
     homePage = new HomePage(page);
     verificationSentPage = new VerificationSentPage(page);
     await homePage.goto();
+  });
+
+  test.afterEach(async () => {
   });
 
   test('should display homepage correctly', async () => {
@@ -36,9 +41,10 @@ test.describe('Homepage Tests', () => {
     await verificationSentPage.expectToBeVisible();
     await verificationSentPage.expectVerificationSentMessage();
 
-    const email = await expectEmailToBeSent(testEmail);
-    expect(email.subject).toContain('Verification Code');
-    expect(email.body).toContain('Your code is');
+    const email = await expectEmailToBeSent(mailHog, testEmail);
+    expect(email.Content.Headers.Subject).toContain('[DataBox] Your Databox submission');
+    const body = Buffer.from(email.Content.Body, 'base64').toString('utf-8');
+    expect(body).toContain('Click this link to complete your submission:');
   });
 
   test('should handle multiple email submissions', async () => {
@@ -53,9 +59,10 @@ test.describe('Homepage Tests', () => {
       await homePage.submitEmail(email);
       await verificationSentPage.expectToBeVisible();
 
-      const verificationMail = await expectEmailToBeSent(email);
-      expect(verificationMail.subject).toContain('Verification Code');
-      expect(verificationMail.body).toContain('Your code is');
+      const verificationMail = await expectEmailToBeSent(mailHog, email);
+      expect(verificationMail.Content.Headers.Subject).toContain('[DataBox] Your Databox submission');
+      const body = Buffer.from(verificationMail.Content.Body, 'base64').toString('utf-8');
+      expect(body).toContain('Click this link to complete your submission:');
     }
   });
 
@@ -103,9 +110,10 @@ test.describe('Homepage Tests', () => {
       await homePage.submitEmail(email);
       await verificationSentPage.expectToBeVisible();
 
-      const verificationMail = await expectEmailToBeSent(email);
-      expect(verificationMail.subject).toContain('Verification Code');
-      expect(verificationMail.body).toContain('Your code is');
+      const verificationMail = await expectEmailToBeSent(mailHog, email);
+      expect(verificationMail.Content.Headers.Subject).toContain('[DataBox] Your Databox submission');
+      const body = Buffer.from(verificationMail.Content.Body, 'base64').toString('utf-8');
+      expect(body).toContain('Click this link to complete your submission:');
     }
   });
 
@@ -115,9 +123,10 @@ test.describe('Homepage Tests', () => {
     await homePage.submitEmail(longEmail);
     await verificationSentPage.expectToBeVisible();
 
-    const verificationMail = await expectEmailToBeSent(longEmail);
-    expect(verificationMail.subject).toContain('Verification Code');
-    expect(verificationMail.body).toContain('Your code is');
+    const verificationMail = await expectEmailToBeSent(mailHog, longEmail);
+    expect(verificationMail.Content.Headers.Subject).toContain('[DataBox] Your Databox submission');
+    const body = Buffer.from(verificationMail.Content.Body, 'base64').toString('utf-8');
+    expect(body).toContain('Click this link to complete your submission:');
   });
 
   test('should be responsive on mobile devices', async ({ page }) => {
@@ -132,25 +141,29 @@ test.describe('Homepage Tests', () => {
     await expect(homePage.sendCodeButton).toBeVisible();
 
     // Test interaction on mobile
-    await homePage.submitEmail('mobile@test.com');
+    const email = 'mobile@test.com';
+    await homePage.submitEmail(email);
     await verificationSentPage.expectToBeVisible();
 
-    const verificationMail = await expectEmailToBeSent("mobile@test.com");
-    expect(verificationMail.subject).toContain('Verification Code');
-    expect(verificationMail.body).toContain('Your code is');
+    const verificationMail = await expectEmailToBeSent(mailHog, email);
+    expect(verificationMail.Content.Headers.Subject).toContain('[DataBox] Your Databox submission');
+    const body = Buffer.from(verificationMail.Content.Body, 'base64').toString('utf-8');
+    expect(body).toContain('Click this link to complete your submission:');
   });
 
   test('should handle form submission with Enter key', async ({ page }) => {
-    await homePage.fillEmail('keyboard@test.com');
+    const email = 'keyboard@test.com';
+    await homePage.fillEmail(email);
 
     // Press Enter to submit form
     await homePage.emailInput.press('Enter');
 
     await verificationSentPage.expectToBeVisible();
 
-    const verificationMail = await expectEmailToBeSent("keyboard@test.com");
-    expect(verificationMail.subject).toContain('Verification Code');
-    expect(verificationMail.body).toContain('Your code is');
+    const verificationMail = await expectEmailToBeSent(mailHog, email);
+    expect(verificationMail.Content.Headers.Subject).toContain('[DataBox] Your Databox submission');
+    const body = Buffer.from(verificationMail.Content.Body, 'base64').toString('utf-8');
+    expect(body).toContain('Click this link to complete your submission:');
   });
 
   test('should preserve email in input during validation errors', async ({ page }) => {

@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import { VerifyPage } from './pages/VerifyPage';
 import { DonePage } from './pages/DonePage';
 import { InvalidPage } from './pages/InvalidPage';
-import { DatabaseHelper } from './utils/database-helper';
+import { DataHelper } from './utils/DataHelper';
 
 test.describe('Form Submission Tests', () => {
   let verifyPage: VerifyPage;
@@ -14,7 +14,7 @@ test.describe('Form Submission Tests', () => {
     verifyPage = new VerifyPage(page);
     donePage = new DonePage(page);
     invalidPage = new InvalidPage(page);
-    mockCode = DatabaseHelper.generateMockCode();
+    mockCode = DataHelper.generateMockCode();
   });
 
   test('should require message field', async ({ page }) => {
@@ -57,7 +57,7 @@ test.describe('Form Submission Tests', () => {
       // But we're testing that the form accepts submission without files
       
       // Check if we're redirected (either to done or invalid)
-      await page.waitForURL(url => !url.includes('/verify'), { timeout: 10000 });
+      await page.waitForURL(url => !url.toString().includes('/verify'), { timeout: 10000 });
       
       const currentUrl = page.url();
       expect(currentUrl).not.toContain('/verify');
@@ -85,7 +85,7 @@ test.describe('Form Submission Tests', () => {
       await verifyPage.clickSubmit();
       
       // Should process the long message (or redirect to invalid if code doesn't exist)
-      await page.waitForURL(url => !url.includes('/verify'), { timeout: 10000 });
+      await page.waitForURL(url => !url.toString().includes('/verify'), { timeout: 10000 });
     } catch {
       await invalidPage.expectToBeVisible();
     }
@@ -113,7 +113,7 @@ test.describe('Form Submission Tests', () => {
       await verifyPage.clickSubmit();
       
       // Should handle special characters properly
-      await page.waitForURL(url => !url.includes('/verify'), { timeout: 10000 });
+      await page.waitForURL(url => !url.toString().includes('/verify'), { timeout: 10000 });
     } catch {
       await invalidPage.expectToBeVisible();
     }
@@ -137,7 +137,7 @@ test.describe('Form Submission Tests', () => {
       await verifyPage.clickSubmit();
       
       // Should redirect away from verify page
-      await page.waitForURL(url => !url.includes('/verify'), { timeout: 10000 });
+      await page.waitForURL(url => !url.toString().includes('/verify'), { timeout: 10000 });
     } catch {
       await invalidPage.expectToBeVisible();
     }
@@ -157,7 +157,7 @@ test.describe('Form Submission Tests', () => {
       await verifyPage.submitButton.click();
       
       // Should only process once
-      await page.waitForURL(url => !url.includes('/verify'), { timeout: 10000 });
+      await page.waitForURL(url => !url.toString().includes('/verify'), { timeout: 10000 });
       
       // Verify we're not on an error page due to double submission
       const currentUrl = page.url();
@@ -183,7 +183,7 @@ test.describe('Form Submission Tests', () => {
       await page.keyboard.press('Enter');
       
       // Should submit the form
-      await page.waitForURL(url => !url.includes('/verify'), { timeout: 10000 });
+      await page.waitForURL(url => !url.toString().includes('/verify'), { timeout: 10000 });
     } catch {
       await invalidPage.expectToBeVisible();
     }
@@ -210,7 +210,7 @@ test.describe('Form Submission Tests', () => {
       // Should be able to submit successfully
       await verifyPage.clickSubmit();
       
-      await page.waitForURL(url => !url.includes('/verify'), { timeout: 10000 });
+      await page.waitForURL(url => !url.toString().includes('/verify'), { timeout: 10000 });
     } catch {
       await invalidPage.expectToBeVisible();
     }

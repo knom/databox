@@ -3,13 +3,13 @@
  * Since we can't easily intercept real emails in E2E tests,
  * we'll provide utilities to work with the verification flow
  */
-export async function expectEmailToBeSent(emailTo: string, timeout = 10000, interval = 500) {
+export async function expectEmailToBeSent(mhs: MailHogEmailService, emailTo: string, timeout = 10000, interval = 500) {
   const startTime = Date.now();
 
   while (Date.now() - startTime < timeout) {
-    const lastEmail = await MailHogEmailService.getLastEmailTo(emailTo);
+    const lastEmail = await mhs.getLastEmailTo(emailTo);
     if (lastEmail) {
-      MailHogEmailService.clear();
+      mhs.delete(lastEmail.ID);
       return lastEmail;
     }
     await new Promise(res => setTimeout(res, interval));
@@ -45,56 +45,73 @@ export class EmailHelper {
   }
 }
 
-interface MailHogEmail {
-  id: string;
-  from: { mailbox: string; domain: string; params?: any };
-  to: Array<{ mailbox: string; domain: string; params?: any }>;
-  content: {
-    headers: Record<string, string[]>;
-    body: string;
+export interface MailhogEmail {
+  ID: string;
+  From: MailhogEmailAddress;
+  To: MailhogEmailAddress[];
+  Content: {
+    Headers: {
+      [headerName: string]: string[];
+    };
+    Body: string;
+    Size: number;
+    MIME: any; // Unknown structure, you can replace 'any' with a more specific type if known
   };
-  created: string; // timestamp string
+  Created: string; // ISO 8601 date string
+  MIME: any; // Unknown structure
+  Raw: {
+    From: string;
+    To: string[];
+    Data: string;
+    Helo: string;
+  };
+}
+
+export interface MailhogEmailAddress {
+  Relays: string[] | null;
+  Mailbox: string;
+  Domain: string;
+  Params: string;
 }
 
 export class MailHogEmailService {
-  private static mailHogApiUrl = 'http://localhost:8025/api/v2/messages';
+
+  private mailHogApiUrl = "";
+
+  constructor(mailhogApiUrl: string = 'http://localhost:8025') {
+    this.mailHogApiUrl = mailhogApiUrl;
+  }
+
+  async delete(ID: string) {
+    await fetch(`${this.mailHogApiUrl}/api/v1/messages/${ID}`, { method: 'DELETE' });
+  }
+
+  async clearAll() {
+    await fetch(`${this.mailHogApiUrl}/api/v1/messages/`, { method: 'DELETE' });
+  }
 
   // Fetch all emails from MailHog
-  static async getAllEmails() {
-    const response = await fetch(this.mailHogApiUrl);
+  async getAllEmails() {
+    const response = await fetch(this.mailHogApiUrl + "/api/v2/messages");
     const data = await response.json();
-    return data.items as MailHogEmail[];
+    return data.items as MailhogEmail[];
   }
 
   // Get last email sent TO a specific email address
-  static async getLastEmailTo(email: string) {
+  async getLastEmailTo(email: string) {
     const allEmails = await this.getAllEmails();
     // Filter emails that have 'to' matching the email param
     const filtered = allEmails.filter(msg =>
-      msg.to.some(recipient => `${recipient.mailbox}@${recipient.domain}` === email)
+      msg.To.some(recipient => `${recipient.Mailbox}@${recipient.Domain}` === email)
     );
 
     if (filtered.length === 0) return null;
 
     // Sort descending by creation timestamp
-    filtered.sort((a, b) => new Date(b.created).getTime() - new Date(a.created).getTime());
+    filtered.sort((a, b) => new Date(b.Created).getTime() - new Date(a.Created).getTime());
 
     const latest = filtered[0];
 
-    // Extract subject and body from headers and content
-    const subject = latest.content.headers['Subject'] ? latest.content.headers['Subject'][0] : '(no subject)';
-    const body = latest.content.body;
-
-    return {
-      to: email,
-      subject,
-      body,
-      timestamp: new Date(latest.created),
-    };
-  }
-
-  // Clear all emails in MailHog by calling the API to delete messages
-  static async clear() {
-    await fetch(`${this.mailHogApiUrl}`, { method: 'DELETE' });
+    return latest;
   }
 }

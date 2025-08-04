@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import { HomePage } from './pages/HomePage';
 import { VerifyPage } from './pages/VerifyPage';
 import { InvalidPage } from './pages/InvalidPage';
-import { DatabaseHelper } from './utils/database-helper';
+import { DataHelper } from "./utils/DataHelper";
 
 test.describe('Verification Tests', () => {
   let homePage: HomePage;
@@ -43,7 +43,7 @@ test.describe('Verification Tests', () => {
   test('should handle verification page with valid code format', async ({ page }) => {
     // Since we can't easily get a real verification code in E2E tests,
     // we'll test the page structure when accessing with a properly formatted code
-    const mockCode = DatabaseHelper.generateMockCode();
+    const mockCode = DataHelper.generateMockCode();
     
     await verifyPage.goto(mockCode);
     
@@ -76,7 +76,7 @@ test.describe('Verification Tests', () => {
     // 3. Use a test-specific endpoint
     
     // For now, we'll test the form structure with a mock code
-    const mockCode = DatabaseHelper.generateMockCode();
+    const mockCode = DataHelper.generateMockCode();
     
     await verifyPage.goto(mockCode);
     
@@ -126,7 +126,7 @@ test.describe('Verification Tests', () => {
   });
 
   test('should handle URL manipulation attempts', async ({ page }) => {
-    const mockCode = DatabaseHelper.generateMockCode();
+    const mockCode = DataHelper.generateMockCode();
     
     // Test various URL manipulation attempts
     const manipulatedUrls = [
@@ -153,7 +153,7 @@ test.describe('Verification Tests', () => {
   });
 
   test('should be accessible via keyboard navigation', async ({ page }) => {
-    const mockCode = DatabaseHelper.generateMockCode();
+    const mockCode = DataHelper.generateMockCode();
     await verifyPage.goto(mockCode);
     
     // Wait for page to load completely
@@ -191,7 +191,7 @@ test.describe('Verification Tests', () => {
   });
 
   test('should handle browser back/forward navigation', async ({ page }) => {
-    const mockCode = DatabaseHelper.generateMockCode();
+    const mockCode = DataHelper.generateMockCode();
     
     // Start at home page
     await homePage.goto();
@@ -209,7 +209,7 @@ test.describe('Verification Tests', () => {
   });
 
   test('should handle page refresh', async ({ page }) => {
-    const mockCode = DatabaseHelper.generateMockCode();
+    const mockCode = DataHelper.generateMockCode();
     await verifyPage.goto(mockCode);
     
     // Refresh the page
