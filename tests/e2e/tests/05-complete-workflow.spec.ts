@@ -59,8 +59,9 @@ test.describe('Complete Workflow Tests', () => {
         await verificationSentPage.expectVerificationSentMessage();
 
         // - get email from server
-        const email = await expectEmailToBeSent(mailhog, testEmail);
-        const body = Buffer.from(email.Content.Body, 'base64').toString('utf-8');
+        const verificationEmail = await expectEmailToBeSent(mailhog, testEmail);
+        expect(verificationEmail.Content.Headers.Subject[0]).toBe("[DataBox Test] Your Databox submission");
+        const body = Buffer.from(verificationEmail.Content.Body, 'base64').toString('utf-8');
 
         const codeMatch = body.match(/verify\?code=([a-zA-Z0-9-]+)/);
         if (!codeMatch) {
@@ -99,7 +100,7 @@ test.describe('Complete Workflow Tests', () => {
 
         const dataEmail = await expectEmailToBeSent(mailhog, "recipient@example.com");
 
-        expect(dataEmail.Content.Headers.Subject[0]).toBe("[DataBox] New documents Received");
+        expect(dataEmail.Content.Headers.Subject[0]).toBe("[DataBox Test] New documents Received");
         expect(dataEmail.Raw.Data).toContain(`Content-Type: application/octet-stream; name=${file1}`)
     });
 

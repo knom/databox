@@ -143,7 +143,7 @@ jobs:
         # Wait for .NET application to be ready
         echo "Waiting for .NET application to start..."
         for i in {1..30}; do
-          if curl -s http://localhost:5000 >/dev/null 2>&1; then
+          if curl -s http://localhost:5050 >/dev/null 2>&1; then
             echo ".NET application is ready"
             break
           fi
@@ -155,7 +155,7 @@ jobs:
         npx playwright test --project=chromium
       env:
         ASPNETCORE_ENVIRONMENT: Testing
-        ASPNETCORE_URLS: http://localhost:5000
+        ASPNETCORE_URLS: http://localhost:5050
         ConnectionStrings__DatabaseProvider: sqlite
         ConnectionStrings__Default: "Data Source=data/test-chromium.db"
         Email__SmtpServer: localhost
@@ -168,8 +168,8 @@ jobs:
         Databox__SubmissionMail__Subject: "[DataBox Test] New documents Received"
         Databox__VerificationMail__Subject: "[DataBox Test] Your Databox submission"
         Databox__TempFileStoragePath: uploads/
-        App__BaseUrl: http://localhost:5000/
-        BASE_URL: http://localhost:5000
+        App__BaseUrl: http://localhost:5050/
+        BASE_URL: http://localhost:5050
         CI: true
 
     - name: Upload Chromium test results
@@ -256,7 +256,7 @@ jobs:
         # Wait for .NET application to be ready
         echo "Waiting for .NET application to start..."
         for i in {1..30}; do
-          if curl -s http://localhost:5000 >/dev/null 2>&1; then
+          if curl -s http://localhost:5050 >/dev/null 2>&1; then
             echo ".NET application is ready"
             break
           fi
@@ -268,7 +268,7 @@ jobs:
         npx playwright test --project=firefox
       env:
         ASPNETCORE_ENVIRONMENT: Testing
-        ASPNETCORE_URLS: http://localhost:5000
+        ASPNETCORE_URLS: http://localhost:5050
         ConnectionStrings__DatabaseProvider: sqlite
         ConnectionStrings__Default: "Data Source=data/test-firefox.db"
         Email__SmtpServer: localhost
@@ -281,8 +281,8 @@ jobs:
         Databox__SubmissionMail__Subject: "[DataBox Test] New documents Received"
         Databox__VerificationMail__Subject: "[DataBox Test] Your Databox submission"
         Databox__TempFileStoragePath: uploads/
-        App__BaseUrl: http://localhost:5000/
-        BASE_URL: http://localhost:5000
+        App__BaseUrl: http://localhost:5050/
+        BASE_URL: http://localhost:5050
         CI: true
 
     - name: Upload Firefox test results
@@ -369,7 +369,7 @@ jobs:
         # Wait for .NET application to be ready
         echo "Waiting for .NET application to start..."
         for i in {1..30}; do
-          if curl -s http://localhost:5000 >/dev/null 2>&1; then
+          if curl -s http://localhost:5050 >/dev/null 2>&1; then
             echo ".NET application is ready"
             break
           fi
@@ -381,7 +381,7 @@ jobs:
         npx playwright test --project=webkit
       env:
         ASPNETCORE_ENVIRONMENT: Testing
-        ASPNETCORE_URLS: http://localhost:5000
+        ASPNETCORE_URLS: http://localhost:5050
         ConnectionStrings__DatabaseProvider: sqlite
         ConnectionStrings__Default: "Data Source=data/test-webkit.db"
         Email__SmtpServer: localhost
@@ -394,8 +394,8 @@ jobs:
         Databox__SubmissionMail__Subject: "[DataBox Test] New documents Received"
         Databox__VerificationMail__Subject: "[DataBox Test] Your Databox submission"
         Databox__TempFileStoragePath: uploads/
-        App__BaseUrl: http://localhost:5000/
-        BASE_URL: http://localhost:5000
+        App__BaseUrl: http://localhost:5050/
+        BASE_URL: http://localhost:5050
         CI: true
 
     - name: Upload WebKit test results
@@ -482,7 +482,7 @@ jobs:
         # Wait for .NET application to be ready
         echo "Waiting for .NET application to start..."
         for i in {1..30}; do
-          if curl -s http://localhost:5000 >/dev/null 2>&1; then
+          if curl -s http://localhost:5050 >/dev/null 2>&1; then
             echo ".NET application is ready"
             break
           fi
@@ -495,7 +495,7 @@ jobs:
         # --project="Mobile Safari"
       env:
         ASPNETCORE_ENVIRONMENT: Testing
-        ASPNETCORE_URLS: http://localhost:5000
+        ASPNETCORE_URLS: http://localhost:5050
         ConnectionStrings__DatabaseProvider: sqlite
         ConnectionStrings__Default: "Data Source=data/test-mobile.db"
         Email__SmtpServer: localhost
@@ -508,8 +508,8 @@ jobs:
         Databox__SubmissionMail__Subject: "[DataBox Test] New documents Received"
         Databox__VerificationMail__Subject: "[DataBox Test] Your Databox submission"
         Databox__TempFileStoragePath: uploads/
-        App__BaseUrl: http://localhost:5000/
-        BASE_URL: http://localhost:5000
+        App__BaseUrl: http://localhost:5050/
+        BASE_URL: http://localhost:5050
         CI: true
 
     - name: Upload Mobile test results
