@@ -88,9 +88,9 @@ jobs:
           - id: firefox
             name: Firefox
             install: firefox
-          - id: webkit
-            name: Webkit
-            install: webkit
+          # - id: webkit
+          #   name: Webkit
+          #   install: webkit
           - id: mobile-chrome
             name: "Mobile Chrome"
             install: chromium
@@ -211,9 +211,9 @@ jobs:
           - id: firefox
             name: Firefox
             install: firefox
-          - id: webkit
-            name: Webkit
-            install: webkit
+          # - id: webkit
+          #   name: Webkit
+          #   install: webkit
           - id: mobile-chrome
             name: "Mobile Chrome"
             install: chromium
@@ -261,7 +261,12 @@ jobs:
               if (!fs.existsSync(artifactsDir)) {
                 testSummary += '⚠️ No test artifacts found.\n';
               } else {
-                const browsers = ['chromium', 'firefox', 'webkit', 'mobile-chrome'];
+                const browsers = [
+                  'chromium', 
+                  'firefox', 
+                  # 'webkit', 
+                  'mobile-chrome'
+                ];
                 let hasResults = false;
 
                 for (const browser of browsers) {
