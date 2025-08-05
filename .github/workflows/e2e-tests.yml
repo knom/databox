@@ -207,7 +207,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           path: all-blob-reports
-          pattern: blob-report-*
+          pattern: test-results-*
           merge-multiple: true
 
       - name: Merge into HTML Report
@@ -231,6 +231,15 @@ jobs:
       - name: Merge into JSON Report
         run: npx playwright merge-reports --reporter json ./all-blob-reports > test-results.json
       - name: Upload JSON report
+        uses: actions/upload-artifact@v4
+        with:
+          name: json-report--attempt-${{ github.run_attempt }}
+          path: test-results.json
+          retention-days: 30
+      
+      - name: Merge into GitHub Report
+        run: npx playwright merge-reports --reporter github ./all-blob-reports
+      - name: Upload GitHub report
         uses: actions/upload-artifact@v4
         with:
           name: json-report--attempt-${{ github.run_attempt }}
