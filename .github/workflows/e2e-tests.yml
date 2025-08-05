@@ -215,7 +215,7 @@ jobs:
       - name: Upload HTML report
         uses: actions/upload-artifact@v4
         with:
-          name: html-report--attempt-${{ github.run_attempt }}
+          name: html-report
           path: playwright-report
           retention-days: 30
 
@@ -224,7 +224,7 @@ jobs:
       - name: Upload JUNIT report
         uses: actions/upload-artifact@v4
         with:
-          name: junit-report--attempt-${{ github.run_attempt }}
+          name: junit-report
           path: test-results.xml
           retention-days: 30
 
@@ -233,19 +233,12 @@ jobs:
       - name: Upload JSON report
         uses: actions/upload-artifact@v4
         with:
-          name: json-report--attempt-${{ github.run_attempt }}
+          name: json-report
           path: test-results.json
           retention-days: 30
       
       - name: Merge into GitHub Report
-        run: npx playwright merge-reports --reporter github ./all-blob-reports
-      - name: Upload GitHub report
-        uses: actions/upload-artifact@v4
-        with:
-          name: json-report--attempt-${{ github.run_attempt }}
-          path: test-results.json
-          retention-days: 30
-          
+        run: npx playwright merge-reports --reporter github ./all-blob-reports        
 
       # - name: Comment PR with test results
       #   if: github.event_name == 'pull_request'
