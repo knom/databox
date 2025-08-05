@@ -62,11 +62,11 @@ All settings can be configured via `appsettings.json` or environment variables:
   "Databox": {
     "SubmissionMail": {
       "SendTo": "databox@yoursite.com",
-      "Subject": "[DataBox] New documents Received",
+      "Subject": "[Databox] New documents Received",
       "Template": "templates/new-submission-email.template"
     },
     "VerificationMail": {
-      "Subject": "[DataBox] Your Databox submission",
+      "Subject": "[Databox] Your Databox submission",
       "Template": "templates/verification-email.template"
     },
     "TempFileStoragePath" : "/tmp/databox-uploads/"
