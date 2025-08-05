@@ -193,8 +193,7 @@ jobs:
         with:
           name: test-results-${{ matrix.browser.id }}
           path: |
-            tests/e2e/playwright-report/
-            tests/e2e/test-results/
+            tests/e2e/blob-report/
           retention-days: 30
 
   publish-summary:
@@ -204,33 +203,21 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Download Chromium test result artifacts
+      - name: Download test result artifacts
         uses: actions/download-artifact@v4
         with:
-          name: test-results-chromium
-          path: ./artifacts/chromium
+          path: all-blob-reports
+          pattern: blob-report-*
+          merge-multiple: true
 
-      - name: Download Firefox test result artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: test-results-firefox
-          path: ./artifacts/firefox
+      - name: Merge into HTML Report
+        run: npx playwright merge-reports --reporter html ./all-blob-reports
 
-      - name: Install junit-merge tool
-        run: npm install -g junit-merge
-
-      - name: Merge all JUnit XML reports
-        run: |
-          mkdir -p merged-reports
-          junit-merge -d ./artifacts -o ./merged-reports/merged-results.xml
-          echo "✅ Merged JUnit XML written to merged-reports/merged-results.xml"
-          ls -l merged-reports/
-
-      - name: Upload merged JUnit XML report
+      - name: Upload HTML report
         uses: actions/upload-artifact@v4
         with:
-          name: merged-junit-report
-          path: merged-reports/merged-results.xml
+          name: html-report--attempt-${{ github.run_attempt }}
+          path: playwright-report
           retention-days: 30
 
 
