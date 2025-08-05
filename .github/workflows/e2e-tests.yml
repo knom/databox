@@ -212,7 +212,6 @@ jobs:
 
       - name: Merge into HTML Report
         run: npx playwright merge-reports --reporter html ./all-blob-reports
-
       - name: Upload HTML report
         uses: actions/upload-artifact@v4
         with:
@@ -220,6 +219,24 @@ jobs:
           path: playwright-report
           retention-days: 30
 
+      - name: Merge into JUNIT Report
+        run: npx playwright merge-reports --reporter junit ./all-blob-reports > test-results.xml
+      - name: Upload JUNIT report
+        uses: actions/upload-artifact@v4
+        with:
+          name: junit-report--attempt-${{ github.run_attempt }}
+          path: test-results.xml
+          retention-days: 30
+
+      - name: Merge into JSON Report
+        run: npx playwright merge-reports --reporter json ./all-blob-reports > test-results.json
+      - name: Upload JSON report
+        uses: actions/upload-artifact@v4
+        with:
+          name: json-report--attempt-${{ github.run_attempt }}
+          path: test-results.json
+          retention-days: 30
+          
 
       # - name: Comment PR with test results
       #   if: github.event_name == 'pull_request'
