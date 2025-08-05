@@ -74,549 +74,237 @@ jobs:
           obj/
         retention-days: 1
 
-  # Parallel test execution jobs
-  test-chromium:
+  test-browser:
     needs: build-and-prepare
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    
+
+    strategy:
+      matrix:
+        browser:
+          - id: chromium
+            name: Chromium
+            install: chromium
+          - id: firefox
+            name: Firefox
+            install: firefox
+          - id: webkit
+            name: Webkit
+            install: webkit
+          - id: mobile-chrome
+            name: "Mobile Chrome"
+            install: chromium
+
+    name: E2E Tests on ${{ matrix.browser.name }}
+
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v4
-      with:
-        dotnet-version: 8.0.x
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
 
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '18'
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
 
-    - name: Download build artifacts
-      uses: actions/download-artifact@v4
-      with:
-        name: build-artifacts
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-artifacts
 
-    - name: Set executable permissions
-      run: |
-        # Set execute permissions on .NET binaries
-        find bin/ -name "*.dll" -o -name "Databox" -o -name "*.exe" | xargs chmod +x 2>/dev/null || true
-        # Set permissions on directories
-        chmod -R 755 bin/ obj/ 2>/dev/null || true
+      - name: Set executable permissions
+        run: |
+          find bin/ -name "*.dll" -o -name "Databox" -o -name "*.exe" | xargs chmod +x 2>/dev/null || true
+          chmod -R 755 bin/ obj/ 2>/dev/null || true
 
-    - name: Install E2E test dependencies
-      working-directory: tests/e2e
-      run: |
-        if [ ! -f package-lock.json ]; then
-          echo "package-lock.json not found, running npm install"
-          npm install
-        else
-          echo "package-lock.json found, running npm ci"
-          npm ci
-        fi
-
-    - name: Install Playwright browsers
-      working-directory: tests/e2e
-      run: npx playwright install --with-deps chromium
-
-    - name: Run Chromium tests
-      run: |
-        # Setup test environment
-        mkdir -p data uploads keys logs
-        rm -f data/test-chromium.db
-        chmod 755 data uploads keys logs
-        
-        # Start MailHog
-        wget -q https://github.com/mailhog/MailHog/releases/download/v1.0.1/MailHog_linux_amd64
-        chmod +x MailHog_linux_amd64
-        ./MailHog_linux_amd64 &
-        
-        # Wait for MailHog to be ready
-        echo "Waiting for MailHog to start..."
-        for i in {1..30}; do
-          if curl -s http://localhost:8025/api/v1/messages >/dev/null 2>&1; then
-            echo "MailHog is ready"
-            break
+      - name: Install E2E test dependencies
+        working-directory: tests/e2e
+        run: |
+          if [ ! -f package-lock.json ]; then
+            npm install
+          else
+            npm ci
           fi
-          sleep 1
-        done
-        
-        # Start .NET application
-        dotnet run --no-build &
-        
-        # Wait for .NET application to be ready
-        echo "Waiting for .NET application to start..."
-        for i in {1..30}; do
-          if curl -s http://localhost:5050 >/dev/null 2>&1; then
-            echo ".NET application is ready"
-            break
-          fi
-          sleep 1
-        done
-        
-        # Run tests
-        cd tests/e2e
-        npx playwright test --project=chromium
-      env:
-        ASPNETCORE_ENVIRONMENT: Testing
-        ASPNETCORE_URLS: http://localhost:5050
-        ConnectionStrings__DatabaseProvider: sqlite
-        ConnectionStrings__Default: "Data Source=data/test-chromium.db"
-        Email__SmtpServer: localhost
-        Email__SmtpPort: 1025
-        Email__Username: test@example.com
-        Email__Password: test
-        Email__From: test@databox.com
-        Email__Ssl: false
-        Databox__SubmissionMail__SendTo: recipient@example.com
-        Databox__SubmissionMail__Subject: "[Databox Test] New documents Received"
-        Databox__VerificationMail__Subject: "[Databox Test] Your Databox submission"
-        Databox__TempFileStoragePath: uploads/
-        App__BaseUrl: http://localhost:5050/
-        BASE_URL: http://localhost:5050
-        CI: true
 
-    - name: Upload Chromium test results
-      uses: actions/upload-artifact@v4
-      if: always()
-      with:
-        name: test-results-chromium
-        path: |
-          tests/e2e/playwright-report/
-          tests/e2e/test-results/
-        retention-days: 30
+      - name: Install Playwright browser
+        working-directory: tests/e2e
+        run: |
+          npx playwright install --with-deps ${{ matrix.browser.install }}
 
-  test-firefox:
-    needs: build-and-prepare
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    
-    steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
+      - name: Run Playwright tests
+        run: |
+          #  create folders for databox
+          mkdir -p data uploads keys logs
+          chmod 755 data uploads keys logs
 
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v4
-      with:
-        dotnet-version: 8.0.x
+          # remove left over DB from previous run
+          rm -f data/test-${{ matrix.browser.id }}.db
+          
+          # Start MailHog
+          wget -q https://github.com/mailhog/MailHog/releases/download/v1.0.1/MailHog_linux_amd64
+          chmod +x MailHog_linux_amd64
+          ./MailHog_linux_amd64 &
+          
+          # Wait for MailHog to be ready
+          for i in {1..30}; do
+            if curl -s http://localhost:8025/api/v1/messages >/dev/null 2>&1; then
+              echo "MailHog is ready"
+              break
+            fi
+            sleep 1
+          done
+          
+          # Start .NET app
+          dotnet run --no-build &
+          
+          # Wait for app
+          for i in {1..30}; do
+            if curl -s http://localhost:5050 >/dev/null 2>&1; then
+              echo ".NET app is ready"
+              break
+            fi
+            sleep 1
+          done
+          
+          cd tests/e2e
+          npx playwright test --project="${{ matrix.browser.name }}"
+        env:
+          ASPNETCORE_ENVIRONMENT: Testing
+          ASPNETCORE_URLS: http://localhost:5050
+          ConnectionStrings__DatabaseProvider: sqlite
+          ConnectionStrings__Default: "Data Source=data/test-${{ matrix.browser.id }}.db"
+          Email__SmtpServer: localhost
+          Email__SmtpPort: 1025
+          Email__Username: test@example.com
+          Email__Password: test
+          Email__From: test@databox.com
+          Email__Ssl: false
+          Databox__SubmissionMail__SendTo: recipient@example.com
+          Databox__SubmissionMail__Subject: "[Databox Test] New documents Received"
+          Databox__VerificationMail__Subject: "[Databox Test] Your Databox submission"
+          Databox__TempFileStoragePath: uploads/
+          App__BaseUrl: http://localhost:5050/
+          BASE_URL: http://localhost:5050
+          CI: true
 
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '18'
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results-${{ matrix.browser.id }}
+          path: |
+            tests/e2e/playwright-report/
+            tests/e2e/test-results/
+          retention-days: 30
 
-    - name: Download build artifacts
-      uses: actions/download-artifact@v4
-      with:
-        name: build-artifacts
-
-    - name: Set executable permissions
-      run: |
-        # Set execute permissions on .NET binaries
-        find bin/ -name "*.dll" -o -name "Databox" -o -name "*.exe" | xargs chmod +x 2>/dev/null || true
-        # Set permissions on directories
-        chmod -R 755 bin/ obj/ 2>/dev/null || true
-
-    - name: Install E2E test dependencies
-      working-directory: tests/e2e
-      run: |
-        if [ ! -f package-lock.json ]; then
-          echo "package-lock.json not found, running npm install"
-          npm install
-        else
-          echo "package-lock.json found, running npm ci"
-          npm ci
-        fi
-
-    - name: Install Playwright browsers
-      working-directory: tests/e2e
-      run: npx playwright install --with-deps firefox
-
-    - name: Run Firefox tests
-      run: |
-        # Setup test environment
-        mkdir -p data uploads keys logs
-        rm -f data/test-firefox.db
-        chmod 755 data uploads keys logs
-        
-        # Start MailHog
-        wget -q https://github.com/mailhog/MailHog/releases/download/v1.0.1/MailHog_linux_amd64
-        chmod +x MailHog_linux_amd64
-        ./MailHog_linux_amd64 &
-        
-        # Wait for MailHog to be ready
-        echo "Waiting for MailHog to start..."
-        for i in {1..30}; do
-          if curl -s http://localhost:8025/api/v1/messages >/dev/null 2>&1; then
-            echo "MailHog is ready"
-            break
-          fi
-          sleep 1
-        done
-        
-        # Start .NET application
-        dotnet run --no-build &
-        
-        # Wait for .NET application to be ready
-        echo "Waiting for .NET application to start..."
-        for i in {1..30}; do
-          if curl -s http://localhost:5050 >/dev/null 2>&1; then
-            echo ".NET application is ready"
-            break
-          fi
-          sleep 1
-        done
-        
-        # Run tests
-        cd tests/e2e
-        npx playwright test --project=firefox
-      env:
-        ASPNETCORE_ENVIRONMENT: Testing
-        ASPNETCORE_URLS: http://localhost:5050
-        ConnectionStrings__DatabaseProvider: sqlite
-        ConnectionStrings__Default: "Data Source=data/test-firefox.db"
-        Email__SmtpServer: localhost
-        Email__SmtpPort: 1025
-        Email__Username: test@example.com
-        Email__Password: test
-        Email__From: test@databox.com
-        Email__Ssl: false
-        Databox__SubmissionMail__SendTo: recipient@example.com
-        Databox__SubmissionMail__Subject: "[DataBox Test] New documents Received"
-        Databox__VerificationMail__Subject: "[DataBox Test] Your Databox submission"
-        Databox__TempFileStoragePath: uploads/
-        App__BaseUrl: http://localhost:5050/
-        BASE_URL: http://localhost:5050
-        CI: true
-
-    - name: Upload Firefox test results
-      uses: actions/upload-artifact@v4
-      if: always()
-      with:
-        name: test-results-firefox
-        path: |
-          tests/e2e/playwright-report/
-          tests/e2e/test-results/
-        retention-days: 30
-
-  test-webkit:
-    needs: build-and-prepare
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    
-    steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v4
-      with:
-        dotnet-version: 8.0.x
-
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '18'
-
-    - name: Download build artifacts
-      uses: actions/download-artifact@v4
-      with:
-        name: build-artifacts
-
-    - name: Set executable permissions
-      run: |
-        # Set execute permissions on .NET binaries
-        find bin/ -name "*.dll" -o -name "Databox" -o -name "*.exe" | xargs chmod +x 2>/dev/null || true
-        # Set permissions on directories
-        chmod -R 755 bin/ obj/ 2>/dev/null || true
-
-    - name: Install E2E test dependencies
-      working-directory: tests/e2e
-      run: |
-        if [ ! -f package-lock.json ]; then
-          echo "package-lock.json not found, running npm install"
-          npm install
-        else
-          echo "package-lock.json found, running npm ci"
-          npm ci
-        fi
-
-    - name: Install Playwright browsers
-      working-directory: tests/e2e
-      run: npx playwright install --with-deps webkit
-
-    - name: Run WebKit tests
-      run: |
-        # Setup test environment
-        mkdir -p data uploads keys logs
-        rm -f data/test-webkit.db
-        chmod 755 data uploads keys logs
-        
-        # Start MailHog
-        wget -q https://github.com/mailhog/MailHog/releases/download/v1.0.1/MailHog_linux_amd64
-        chmod +x MailHog_linux_amd64
-        ./MailHog_linux_amd64 &
-        
-        # Wait for MailHog to be ready
-        echo "Waiting for MailHog to start..."
-        for i in {1..30}; do
-          if curl -s http://localhost:8025/api/v1/messages >/dev/null 2>&1; then
-            echo "MailHog is ready"
-            break
-          fi
-          sleep 1
-        done
-        
-        # Start .NET application
-        dotnet run --no-build &
-        
-        # Wait for .NET application to be ready
-        echo "Waiting for .NET application to start..."
-        for i in {1..30}; do
-          if curl -s http://localhost:5050 >/dev/null 2>&1; then
-            echo ".NET application is ready"
-            break
-          fi
-          sleep 1
-        done
-        
-        # Run tests
-        cd tests/e2e
-        npx playwright test --project=webkit
-      env:
-        ASPNETCORE_ENVIRONMENT: Testing
-        ASPNETCORE_URLS: http://localhost:5050
-        ConnectionStrings__DatabaseProvider: sqlite
-        ConnectionStrings__Default: "Data Source=data/test-webkit.db"
-        Email__SmtpServer: localhost
-        Email__SmtpPort: 1025
-        Email__Username: test@example.com
-        Email__Password: test
-        Email__From: test@databox.com
-        Email__Ssl: false
-        Databox__SubmissionMail__SendTo: recipient@example.com
-        Databox__SubmissionMail__Subject: "[DataBox Test] New documents Received"
-        Databox__VerificationMail__Subject: "[DataBox Test] Your Databox submission"
-        Databox__TempFileStoragePath: uploads/
-        App__BaseUrl: http://localhost:5050/
-        BASE_URL: http://localhost:5050
-        CI: true
-
-    - name: Upload WebKit test results
-      uses: actions/upload-artifact@v4
-      if: always()
-      with:
-        name: test-results-webkit
-        path: |
-          tests/e2e/playwright-report/
-          tests/e2e/test-results/
-        retention-days: 30
-
-  test-mobile:
-    needs: build-and-prepare
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    
-    steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v4
-      with:
-        dotnet-version: 8.0.x
-
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '18'
-
-    - name: Download build artifacts
-      uses: actions/download-artifact@v4
-      with:
-        name: build-artifacts
-
-    - name: Set executable permissions
-      run: |
-        # Set execute permissions on .NET binaries
-        find bin/ -name "*.dll" -o -name "Databox" -o -name "*.exe" | xargs chmod +x 2>/dev/null || true
-        # Set permissions on directories
-        chmod -R 755 bin/ obj/ 2>/dev/null || true
-
-    - name: Install E2E test dependencies
-      working-directory: tests/e2e
-      run: |
-        if [ ! -f package-lock.json ]; then
-          echo "package-lock.json not found, running npm install"
-          npm install
-        else
-          echo "package-lock.json found, running npm ci"
-          npm ci
-        fi
-
-    - name: Install Playwright browsers
-      working-directory: tests/e2e
-      run: npx playwright install --with-deps chromium
-
-    - name: Run Mobile tests
-      run: |
-        # Setup test environment
-        mkdir -p data uploads keys logs
-        rm -f data/test-mobile.db
-        chmod 755 data uploads keys logs
-        
-        # Start MailHog
-        wget -q https://github.com/mailhog/MailHog/releases/download/v1.0.1/MailHog_linux_amd64
-        chmod +x MailHog_linux_amd64
-        ./MailHog_linux_amd64 &
-        
-        # Wait for MailHog to be ready
-        echo "Waiting for MailHog to start..."
-        for i in {1..30}; do
-          if curl -s http://localhost:8025/api/v1/messages >/dev/null 2>&1; then
-            echo "MailHog is ready"
-            break
-          fi
-          sleep 1
-        done
-        
-        # Start .NET application
-        dotnet run --no-build &
-        
-        # Wait for .NET application to be ready
-        echo "Waiting for .NET application to start..."
-        for i in {1..30}; do
-          if curl -s http://localhost:5050 >/dev/null 2>&1; then
-            echo ".NET application is ready"
-            break
-          fi
-          sleep 1
-        done
-        
-        # Run tests
-        cd tests/e2e
-        npx playwright test --project="Mobile Chrome" 
-        # --project="Mobile Safari"
-      env:
-        ASPNETCORE_ENVIRONMENT: Testing
-        ASPNETCORE_URLS: http://localhost:5050
-        ConnectionStrings__DatabaseProvider: sqlite
-        ConnectionStrings__Default: "Data Source=data/test-mobile.db"
-        Email__SmtpServer: localhost
-        Email__SmtpPort: 1025
-        Email__Username: test@example.com
-        Email__Password: test
-        Email__From: test@databox.com
-        Email__Ssl: false
-        Databox__SubmissionMail__SendTo: recipient@example.com
-        Databox__SubmissionMail__Subject: "[DataBox Test] New documents Received"
-        Databox__VerificationMail__Subject: "[DataBox Test] Your Databox submission"
-        Databox__TempFileStoragePath: uploads/
-        App__BaseUrl: http://localhost:5050/
-        BASE_URL: http://localhost:5050
-        CI: true
-
-    - name: Upload Mobile test results
-      uses: actions/upload-artifact@v4
-      if: always()
-      with:
-        name: test-results-mobile
-        path: |
-          tests/e2e/playwright-report/
-          tests/e2e/test-results/
-        retention-days: 30
-
-  # Job to merge and publish test reports
   publish-results:
+    strategy:
+      matrix:
+        browser:
+          - id: chromium
+            name: Chromium
+            install: chromium
+          - id: firefox
+            name: Firefox
+            install: firefox
+          - id: webkit
+            name: Webkit
+            install: webkit
+          - id: mobile-chrome
+            name: "Mobile Chrome"
+            install: chromium
     if: always()
-    needs: [test-chromium, test-firefox, test-webkit, test-mobile]
+    needs: [test-browser]
     runs-on: ubuntu-latest
-    
+
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+      - name: Download artifacts for ${{ matrix.browser.id }}
+        uses: actions/download-artifact@v4
+        with:
+          name: test-results-${{ matrix.browser.id }}
+          path: ./artifacts/test-results-${{ matrix.browser.id }}
 
-    - name: Download all artifacts
-      uses: actions/download-artifact@v4
-      with:
-        path: artifacts
+  # Single final job to merge & comment
+  publish-summary:
+    needs: publish-results
+    if: always()
+    runs-on: ubuntu-latest
 
-    - name: Merge test reports
-      run: |
-        mkdir -p merged-reports
-        # Look for JUnit XML files in test results
-        find artifacts -name "*.xml" -type f -exec cp {} merged-reports/ \; 2>/dev/null || true
-        # Look for JSON results files
-        find artifacts -name "results.json" -type f -exec cp {} merged-reports/ \; 2>/dev/null || true
-        # List what we found
-        echo "Found test report files:"
-        ls -la merged-reports/ || echo "No test report files found"
+    steps:
+      - uses: actions/checkout@v4
 
-    - name: Comment PR with test results
-      if: github.event_name == 'pull_request'
-      uses: actions/github-script@v7
-      with:
-        script: |
-          const fs = require('fs');
-          const path = require('path');
-          
-          let testSummary = '## 🧪 E2E Test Results\n\n';
-          
-          try {
-            // Check for artifacts directory
-            const artifactsDir = 'artifacts';
-            if (!fs.existsSync(artifactsDir)) {
-              testSummary += '⚠️ No test artifacts found.\n';
-            } else {
-              // Check browser test results
-              const browsers = ['chromium', 'firefox', 'webkit', 'mobile'];
-              let hasResults = false;
-              
-              for (const browser of browsers) {
-                const testResultsDir = path.join(artifactsDir, `test-results-${browser}`);
-                
-                if (fs.existsSync(testResultsDir)) {
-                  const displayName = browser === 'mobile' ? 'Mobile Tests' : 
-                                    browser.charAt(0).toUpperCase() + browser.slice(1);
-                  testSummary += `### ${displayName}\n`;
-                  testSummary += `✅ Tests completed\n\n`;
-                  hasResults = true;
-                } else {
-                  const displayName = browser === 'mobile' ? 'Mobile Tests' : 
-                                    browser.charAt(0).toUpperCase() + browser.slice(1);
-                  testSummary += `### ${displayName}\n`;
-                  testSummary += `❌ Tests failed or incomplete\n\n`;
+      - name: Merge test reports
+        run: |
+          mkdir -p merged-reports
+          find ./artifacts -name "*.xml" -type f -exec cp {} merged-reports/ \; 2>/dev/null || true
+          find ./artifacts -name "results.json" -type f -exec cp {} merged-reports/ \; 2>/dev/null || true
+          echo "Found test report files:"
+          ls -la merged-reports/ || echo "No test report files found"
+
+      - name: Comment PR with test results
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+
+            let testSummary = '## 🧪 E2E Test Results\n\n';
+
+            try {
+              const artifactsDir = './artifacts';
+              if (!fs.existsSync(artifactsDir)) {
+                testSummary += '⚠️ No test artifacts found.\n';
+              } else {
+                const browsers = ['chromium', 'firefox', 'webkit', 'mobile-chrome'];
+                let hasResults = false;
+
+                for (const browser of browsers) {
+                  const testResultsDir = path.join(artifactsDir, `test-results-${browser}`);
+
+                  if (fs.existsSync(testResultsDir)) {
+                    const displayName = browser === 'mobile-chrome' ? 'Mobile Chrome Tests' :
+                                      browser.charAt(0).toUpperCase() + browser.slice(1);
+                    testSummary += `### ${displayName}\n✅ Tests completed\n\n`;
+                    hasResults = true;
+                  } else {
+                    const displayName = browser === 'mobile-chrome' ? 'Mobile Chrome Tests' :
+                                      browser.charAt(0).toUpperCase() + browser.slice(1);
+                    testSummary += `### ${displayName}\n❌ Tests failed or incomplete\n\n`;
+                  }
+                }
+
+                if (hasResults) {
+                  testSummary +=
+                    '📊 **View detailed reports in the workflow artifacts**\n' +
+                    '- HTML reports with screenshots and traces\n' +
+                    '- Test execution videos (on failures)\n' +
+                    '- Performance metrics and timing data\n';
                 }
               }
-              
-              if (hasResults) {
-                testSummary += '📊 **View detailed reports in the workflow artifacts**\n';
-                testSummary += '- HTML reports with screenshots and traces\n';
-                testSummary += '- Test execution videos (on failures)\n';
-                testSummary += '- Performance metrics and timing data\n';
-              }
+
+              testSummary += `\n---\n*Workflow run: [${context.runId}](${context.payload.repository.html_url}/actions/runs/${context.runId})*`;
+
+              await github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: testSummary,
+              });
+            } catch (error) {
+              console.log('Error creating PR comment:', error);
+
+              await github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body:
+                  `## 🧪 E2E Test Results\n\n⚠️ Unable to parse test results, but tests have completed.\n\n` +
+                  `Check the [workflow run](${context.payload.repository.html_url}/actions/runs/${context.runId}) for detailed results.`,
+              });
             }
-            
-            testSummary += `\n---\n*Workflow run: [${context.runId}](${context.payload.repository.html_url}/actions/runs/${context.runId})*`;
-            
-            // Comment on PR
-            await github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: testSummary
-            });
-            
-          } catch (error) {
-            console.log('Error creating PR comment:', error);
-            
-            // Fallback comment
-            await github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: `## 🧪 E2E Test Results\n\n⚠️ Unable to parse test results, but tests have completed.\n\nCheck the [workflow run](${context.payload.repository.html_url}/actions/runs/${context.runId}) for detailed results.`
-            });
-          }

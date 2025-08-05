@@ -41,17 +41,17 @@ export default defineConfig({
   /* Configure projects for major browsers */
   projects: [
     {
-      name: 'chromium',
+      name: 'Chromium',
       use: { ...devices['Desktop Chrome'] },
     },
 
     {
-      name: 'firefox',
+      name: 'Firefox',
       use: { ...devices['Desktop Firefox'] },
     },
 
     // {
-    //   name: 'webkit',
+    //   name: 'Webkit',
     //   use: { ...devices['Desktop Safari'] },
     // },
 
@@ -84,7 +84,7 @@ export default defineConfig({
     reuseExistingServer: true,
     timeout: 120 * 1000, // 2 minutes
     env: {
-      ASPNETCORE_ENVIRONMENT: 'Development',
+      'ASPNETCORE_ENVIRONMENT': 'Development',
       // Override email settings for testing
       'Email__SmtpServer': 'localhost',
       'Email__SmtpPort': '1025',
