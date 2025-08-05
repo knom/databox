@@ -241,76 +241,87 @@ jobs:
       - name: Merge test reports
         run: |
           mkdir -p merged-reports
+
+          echo "📦 Copying XML test reports..."
           find ./artifacts -name "*.xml" -type f -exec cp {} merged-reports/ \; 2>/dev/null || true
+
+          echo "📦 Copying JSON result files..."
           find ./artifacts -name "results.json" -type f -exec cp {} merged-reports/ \; 2>/dev/null || true
-          echo "Found test report files:"
-          ls -la merged-reports/ || echo "No test report files found"
 
-      - name: Comment PR with test results
-        if: github.event_name == 'pull_request'
-        uses: actions/github-script@v7
+          echo "✅ Done. Found test report files:"
+          ls -la merged-reports/ || echo "⚠️ No test report files found."
+
+      - name: Upload merged test reports
+        uses: actions/upload-artifact@v4
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            const fs = require('fs');
-            const path = require('path');
+          name: e2e-merged-reports
+          path: merged-reports/
 
-            let testSummary = '## 🧪 E2E Test Results\n\n';
+      # - name: Comment PR with test results
+      #   if: github.event_name == 'pull_request'
+      #   uses: actions/github-script@v7
+      #   with:
+      #     github-token: ${{ secrets.GITHUB_TOKEN }}
+      #     script: |
+      #       const fs = require('fs');
+      #       const path = require('path');
 
-            try {
-              const artifactsDir = './artifacts';
-              if (!fs.existsSync(artifactsDir)) {
-                testSummary += '⚠️ No test artifacts found.\n';
-              } else {
-                const browsers = [
-                  'chromium', 
-                  'firefox', 
-                  // 'webkit', 
-                  'mobile-chrome'
-                ];
-                let hasResults = false;
+      #       let testSummary = '## 🧪 E2E Test Results\n\n';
 
-                for (const browser of browsers) {
-                  const testResultsDir = path.join(artifactsDir, `test-results-${browser}`);
+      #       try {
+      #         const artifactsDir = './artifacts';
+      #         if (!fs.existsSync(artifactsDir)) {
+      #           testSummary += '⚠️ No test artifacts found.\n';
+      #         } else {
+      #           const browsers = [
+      #             'chromium', 
+      #             'firefox', 
+      #             // 'webkit', 
+      #             'mobile-chrome'
+      #           ];
+      #           let hasResults = false;
 
-                  if (fs.existsSync(testResultsDir)) {
-                    const displayName = browser === 'mobile-chrome' ? 'Mobile Chrome Tests' :
-                                      browser.charAt(0).toUpperCase() + browser.slice(1);
-                    testSummary += `### ${displayName}\n✅ Tests completed\n\n`;
-                    hasResults = true;
-                  } else {
-                    const displayName = browser === 'mobile-chrome' ? 'Mobile Chrome Tests' :
-                                      browser.charAt(0).toUpperCase() + browser.slice(1);
-                    testSummary += `### ${displayName}\n❌ Tests failed or incomplete\n\n`;
-                  }
-                }
+      #           for (const browser of browsers) {
+      #             const testResultsDir = path.join(artifactsDir, `test-results-${browser}`);
 
-                if (hasResults) {
-                  testSummary +=
-                    '📊 **View detailed reports in the workflow artifacts**\n' +
-                    '- HTML reports with screenshots and traces\n' +
-                    '- Test execution videos (on failures)\n' +
-                    '- Performance metrics and timing data\n';
-                }
-              }
+      #             if (fs.existsSync(testResultsDir)) {
+      #               const displayName = browser === 'mobile-chrome' ? 'Mobile Chrome Tests' :
+      #                                 browser.charAt(0).toUpperCase() + browser.slice(1);
+      #               testSummary += `### ${displayName}\n✅ Tests completed\n\n`;
+      #               hasResults = true;
+      #             } else {
+      #               const displayName = browser === 'mobile-chrome' ? 'Mobile Chrome Tests' :
+      #                                 browser.charAt(0).toUpperCase() + browser.slice(1);
+      #               testSummary += `### ${displayName}\n❌ Tests failed or incomplete\n\n`;
+      #             }
+      #           }
 
-              testSummary += `\n---\n*Workflow run: [${context.runId}](${context.payload.repository.html_url}/actions/runs/${context.runId})*`;
+      #           if (hasResults) {
+      #             testSummary +=
+      #               '📊 **View detailed reports in the workflow artifacts**\n' +
+      #               '- HTML reports with screenshots and traces\n' +
+      #               '- Test execution videos (on failures)\n' +
+      #               '- Performance metrics and timing data\n';
+      #           }
+      #         }
 
-              await github.rest.issues.createComment({
-                issue_number: context.issue.number,
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                body: testSummary,
-              });
-            } catch (error) {
-              console.log('Error creating PR comment:', error);
+      #         testSummary += `\n---\n*Workflow run: [${context.runId}](${context.payload.repository.html_url}/actions/runs/${context.runId})*`;
 
-              await github.rest.issues.createComment({
-                issue_number: context.issue.number,
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                body:
-                  `## 🧪 E2E Test Results\n\n⚠️ Unable to parse test results, but tests have completed.\n\n` +
-                  `Check the [workflow run](${context.payload.repository.html_url}/actions/runs/${context.runId}) for detailed results.`,
-              });
-            }
+      #         await github.rest.issues.createComment({
+      #           issue_number: context.issue.number,
+      #           owner: context.repo.owner,
+      #           repo: context.repo.repo,
+      #           body: testSummary,
+      #         });
+      #       } catch (error) {
+      #         console.log('Error creating PR comment:', error);
+
+      #         await github.rest.issues.createComment({
+      #           issue_number: context.issue.number,
+      #           owner: context.repo.owner,
+      #           repo: context.repo.repo,
+      #           body:
+      #             `## 🧪 E2E Test Results\n\n⚠️ Unable to parse test results, but tests have completed.\n\n` +
+      #             `Check the [workflow run](${context.payload.repository.html_url}/actions/runs/${context.runId}) for detailed results.`,
+      #         });
+      #       }
