@@ -91,9 +91,9 @@ jobs:
           # - id: webkit
           #   name: Webkit
           #   install: webkit
-          - id: mobile-chrome
-            name: "Mobile Chrome"
-            install: chromium
+          # - id: mobile-chrome
+          #   name: "Mobile Chrome"
+          #   install: chromium
 
     name: E2E Tests on ${{ matrix.browser.name }}
 
@@ -214,9 +214,9 @@ jobs:
           # - id: webkit
           #   name: Webkit
           #   install: webkit
-          - id: mobile-chrome
-            name: "Mobile Chrome"
-            install: chromium
+          # - id: mobile-chrome
+          #   name: "Mobile Chrome"
+          #   install: chromium
     if: always()
     needs: [test-browser]
     runs-on: ubuntu-latest
@@ -250,6 +250,7 @@ jobs:
         if: github.event_name == 'pull_request'
         uses: actions/github-script@v7
         with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const fs = require('fs');
             const path = require('path');
