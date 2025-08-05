@@ -204,12 +204,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Download all test result artifacts
+      - name: Download Chromium test result artifacts
         uses: actions/download-artifact@v4
         with:
           name: test-results-chromium
           path: ./artifacts/chromium
-      - uses: actions/download-artifact@v4
+      - name: Download Firefox test result artifacts
+        uses: actions/download-artifact@v4
         with:
           name: test-results-firefox
           path: ./artifacts/firefox
@@ -219,9 +220,9 @@ jobs:
         run: |
           mkdir -p merged-reports
           cp ./artifacts/**/*.xml merged-reports/ 2>/dev/null || true
-          # Add JSON merging step if needed here (see below)
-          ls -la merged-reports/
-
+          # count files
+          file_count=$(ls merged-reports/*.xml 2>/dev/null | wc -l)
+          echo "Found $file_count XML files to merge"
       - name: Install junit-merge tool
         run: npm install -g junit-merge
 
