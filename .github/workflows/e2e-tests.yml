@@ -1,0 +1,310 @@
+name: E2E Tests
+permissions:
+  issues: write
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  # Common build and preparation phase
+  build-and-prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      cache-key: ${{ steps.cache-key.outputs.key }}
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 8.0.x
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+
+    - name: Generate cache key
+      id: cache-key
+      run: |
+        echo "key=${{ runner.os }}-build-${{ hashFiles('**/*.csproj', 'tests/e2e/package*.json') }}-${{ github.sha }}" >> $GITHUB_OUTPUT
+
+    - name: Cache .NET build
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.nuget/packages
+          bin/
+          obj/
+        key: ${{ steps.cache-key.outputs.key }}-dotnet
+        restore-keys: |
+          ${{ runner.os }}-build-dotnet-
+
+    - name: Cache node modules
+      uses: actions/cache@v4
+      with:
+        path: tests/e2e/node_modules
+        key: ${{ steps.cache-key.outputs.key }}-node
+        restore-keys: |
+          ${{ runner.os }}-build-node-
+
+    - name: Restore NPM dependencies
+      run: npm install
+
+    - name: Restore .NET dependencies
+      run: dotnet restore
+    - name: Build .NET application
+      run: dotnet build --no-restore
+
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: build-artifacts
+        path: |
+          bin/
+          obj/
+        retention-days: 1
+
+  test-browser:
+    needs: build-and-prepare
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    strategy:
+      matrix:
+        browser:
+          - id: chromium
+            name: Chromium
+            install: chromium
+          - id: firefox
+            name: Firefox
+            install: firefox
+          # - id: webkit
+          #   name: Webkit
+          #   install: webkit
+          # - id: mobile-chrome
+          #   name: "Mobile Chrome"
+          #   install: chromium
+
+    name: E2E Tests on ${{ matrix.browser.name }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-artifacts
+
+      - name: Set executable permissions
+        run: |
+          find bin/ -name "*.dll" -o -name "Databox" -o -name "*.exe" | xargs chmod +x 2>/dev/null || true
+          chmod -R 755 bin/ obj/ 2>/dev/null || true
+
+      - name: Install E2E test dependencies
+        working-directory: tests/e2e
+        run: |
+          if [ ! -f package-lock.json ]; then
+            npm install
+          else
+            npm ci
+          fi
+
+      - name: Install Playwright browser
+        working-directory: tests/e2e
+        run: |
+          npx playwright install --with-deps ${{ matrix.browser.install }}
+
+      - name: Run Playwright tests
+        run: |
+          #  create folders for databox
+          mkdir -p data uploads keys logs
+          chmod 755 data uploads keys logs
+
+          # remove left over DB from previous run
+          rm -f data/test-${{ matrix.browser.id }}.db
+          
+          # Start MailHog
+          wget -q https://github.com/mailhog/MailHog/releases/download/v1.0.1/MailHog_linux_amd64
+          chmod +x MailHog_linux_amd64
+          ./MailHog_linux_amd64 &
+          
+          # Wait for MailHog to be ready
+          for i in {1..30}; do
+            if curl -s http://localhost:8025/api/v1/messages >/dev/null 2>&1; then
+              echo "MailHog is ready"
+              break
+            fi
+            sleep 1
+          done
+          
+          # Start .NET app
+          dotnet run --no-build &
+          
+          # Wait for app
+          for i in {1..30}; do
+            if curl -s http://localhost:5050 >/dev/null 2>&1; then
+              echo ".NET app is ready"
+              break
+            fi
+            sleep 1
+          done
+          
+          cd tests/e2e
+          npx playwright test --project="${{ matrix.browser.name }}"
+        env:
+          ASPNETCORE_ENVIRONMENT: Testing
+          ASPNETCORE_URLS: http://localhost:5050
+          ConnectionStrings__DatabaseProvider: sqlite
+          ConnectionStrings__Default: "Data Source=data/test-${{ matrix.browser.id }}.db"
+          Email__SmtpServer: localhost
+          Email__SmtpPort: 1025
+          Email__Username: test@example.com
+          Email__Password: test
+          Email__From: test@databox.com
+          Email__Ssl: false
+          Databox__SubmissionMail__SendTo: recipient@example.com
+          Databox__SubmissionMail__Subject: "[Databox Test] New documents Received"
+          Databox__VerificationMail__Subject: "[Databox Test] Your Databox submission"
+          Databox__TempFileStoragePath: uploads/
+          App__BaseUrl: http://localhost:5050/
+          BASE_URL: http://localhost:5050
+          CI: true
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results-${{ matrix.browser.id }}
+          path: |
+            tests/e2e/blob-report/
+          retention-days: 30
+
+  publish-summary:
+    needs: [test-browser]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download test result artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: all-blob-reports
+          pattern: test-results-*
+          merge-multiple: true
+
+      - name: Merge into HTML Report
+        run: npx playwright merge-reports --reporter html ./all-blob-reports
+      - name: Upload HTML report
+        uses: actions/upload-artifact@v4
+        with:
+          name: html-report
+          path: playwright-report
+          retention-days: 30
+
+      - name: Merge into JUNIT Report
+        run: npx playwright merge-reports --reporter junit ./all-blob-reports > test-results.xml
+      - name: Upload JUNIT report
+        uses: actions/upload-artifact@v4
+        with:
+          name: junit-report
+          path: test-results.xml
+          retention-days: 30
+
+      - name: Merge into JSON Report
+        run: npx playwright merge-reports --reporter json ./all-blob-reports > test-results.json
+      - name: Upload JSON report
+        uses: actions/upload-artifact@v4
+        with:
+          name: json-report
+          path: test-results.json
+          retention-days: 30
+      
+      - name: Merge into GitHub Report
+        run: npx playwright merge-reports --reporter github ./all-blob-reports        
+
+      # - name: Comment PR with test results
+      #   if: github.event_name == 'pull_request'
+      #   uses: actions/github-script@v7
+      #   with:
+      #     github-token: ${{ secrets.GITHUB_TOKEN }}
+      #     script: |
+      #       const fs = require('fs');
+      #       const path = require('path');
+
+      #       let testSummary = '## 🧪 E2E Test Results\n\n';
+
+      #       try {
+      #         const artifactsDir = './artifacts';
+      #         if (!fs.existsSync(artifactsDir)) {
+      #           testSummary += '⚠️ No test artifacts found.\n';
+      #         } else {
+      #           const browsers = [
+      #             'chromium', 
+      #             'firefox', 
+      #             // 'webkit', 
+      #             'mobile-chrome'
+      #           ];
+      #           let hasResults = false;
+
+      #           for (const browser of browsers) {
+      #             const testResultsDir = path.join(artifactsDir, `test-results-${browser}`);
+
+      #             if (fs.existsSync(testResultsDir)) {
+      #               const displayName = browser === 'mobile-chrome' ? 'Mobile Chrome Tests' :
+      #                                 browser.charAt(0).toUpperCase() + browser.slice(1);
+      #               testSummary += `### ${displayName}\n✅ Tests completed\n\n`;
+      #               hasResults = true;
+      #             } else {
+      #               const displayName = browser === 'mobile-chrome' ? 'Mobile Chrome Tests' :
+      #                                 browser.charAt(0).toUpperCase() + browser.slice(1);
+      #               testSummary += `### ${displayName}\n❌ Tests failed or incomplete\n\n`;
+      #             }
+      #           }
+
+      #           if (hasResults) {
+      #             testSummary +=
+      #               '📊 **View detailed reports in the workflow artifacts**\n' +
+      #               '- HTML reports with screenshots and traces\n' +
+      #               '- Test execution videos (on failures)\n' +
+      #               '- Performance metrics and timing data\n';
+      #           }
+      #         }
+
+      #         testSummary += `\n---\n*Workflow run: [${context.runId}](${context.payload.repository.html_url}/actions/runs/${context.runId})*`;
+
+      #         await github.rest.issues.createComment({
+      #           issue_number: context.issue.number,
+      #           owner: context.repo.owner,
+      #           repo: context.repo.repo,
+      #           body: testSummary,
+      #         });
+      #       } catch (error) {
+      #         console.log('Error creating PR comment:', error);
+
+      #         await github.rest.issues.createComment({
+      #           issue_number: context.issue.number,
+      #           owner: context.repo.owner,
+      #           repo: context.repo.repo,
+      #           body:
+      #             `## 🧪 E2E Test Results\n\n⚠️ Unable to parse test results, but tests have completed.\n\n` +
+      #             `Check the [workflow run](${context.payload.repository.html_url}/actions/runs/${context.runId}) for detailed results.`,
+      #         });
+      #       }

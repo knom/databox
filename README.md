@@ -62,11 +62,11 @@ All settings can be configured via `appsettings.json` or environment variables:
   "Databox": {
     "SubmissionMail": {
       "SendTo": "databox@yoursite.com",
-      "Subject": "[DataBox] New documents Received",
+      "Subject": "[Databox] New documents Received",
       "Template": "templates/new-submission-email.template"
     },
     "VerificationMail": {
-      "Subject": "[DataBox] Your Databox submission",
+      "Subject": "[Databox] Your Databox submission",
       "Template": "templates/verification-email.template"
     },
     "TempFileStoragePath" : "/tmp/databox-uploads/"
@@ -124,6 +124,19 @@ docker run -p 8080:8080 \
 
 The project is developed in .NET 8.0 using ASP.NET MVC Core & Rest APIs.
 It's available under [MIT License](LICENSE)
+
+### 🧪 Testing
+
+The project includes comprehensive end-to-end tests using Playwright:
+
+```bash
+cd tests/e2e
+npm install
+npx playwright install
+npm test
+```
+
+See [E2E Test Documentation](tests/e2e/README.md) for detailed testing information.
 
 ### 📁 Project Structure
 

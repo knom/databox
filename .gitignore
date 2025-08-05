@@ -38,3 +38,9 @@ msbuild.wrn
 
 # Visual Studio 2015
 .vs/
+
+# Playwright
+**/test-results/
+**/playwright-report/
+**/blob-report/
+**/playwright/.cache/

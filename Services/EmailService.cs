@@ -36,12 +36,12 @@ public class EmailService
 
         _emailFrom = config["Email:From"] ?? _emailUsername ?? throw new ArgumentException("Email:From not configured");
 
-        _verificationEmailSubject = config["Databox:VerificationMail:Subject"] ?? "[DataBox] Your Databox submission";
+        _verificationEmailSubject = config["Databox:VerificationMail:Subject"] ?? "[Databox] Your Databox submission";
         _verificationEmailTemplate = config["Databox:VerificationMail:Template"] ?? "templates/verification-email.template";
 
         _emailSsl = config.GetValue("Email:Ssl", true);
 
-        _submissionEmailSubject = config["Databox:SubmissionMail:Subject"] ?? "[DataBox] New documents Received";
+        _submissionEmailSubject = config["Databox:SubmissionMail:Subject"] ?? "[Databox] New documents Received";
         _submissionEmailTo = config["Databox:SubmissionMail:SendTo"] ?? _emailFrom ?? throw new ArgumentException("Databox:SubmissionMail:SendTo not configured");
 
         _submissionEmailTemplate = config["Databox:SubmissionMail:Template"] ?? "templates/submission-email.template";
@@ -64,7 +64,7 @@ public class EmailService
             using var client = new SmtpClient(_emailSmtpServer, _emailPort)
             {
                 Credentials = new NetworkCredential(_emailUsername, _emailPassword),
-                EnableSsl = true
+                EnableSsl = _emailSsl
             };
 
             var mail = new MailMessage(_emailFrom, toEmail, _verificationEmailSubject, body)
