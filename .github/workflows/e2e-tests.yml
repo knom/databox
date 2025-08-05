@@ -209,25 +209,22 @@ jobs:
         with:
           name: test-results-chromium
           path: ./artifacts/chromium
+
       - name: Download Firefox test result artifacts
         uses: actions/download-artifact@v4
         with:
           name: test-results-firefox
           path: ./artifacts/firefox
 
-      # Merge XML & JSON results into merged-reports folder
-      - name: Prepare merged reports folder
-        run: |
-          mkdir -p merged-reports
-          cp ./artifacts/**/*.xml merged-reports/ 2>/dev/null || true
-          # count files
-          file_count=$(ls merged-reports/*.xml 2>/dev/null | wc -l)
-          echo "Found $file_count XML files to merge"
       - name: Install junit-merge tool
         run: npm install -g junit-merge
 
-      - name: Merge JUnit XML reports
-        run: junit-merge -d ./merged-reports -o ./merged-reports/merged-results.xml
+      - name: Merge all JUnit XML reports
+        run: |
+          mkdir -p merged-reports
+          junit-merge -d ./artifacts -o ./merged-reports/merged-results.xml
+          echo "✅ Merged JUnit XML written to merged-reports/merged-results.xml"
+          ls -l merged-reports/
 
       - name: Upload merged JUnit XML report
         uses: actions/upload-artifact@v4
@@ -236,16 +233,6 @@ jobs:
           path: merged-reports/merged-results.xml
           retention-days: 30
 
-      - name: Generate Playwright HTML Report UI
-        run: |
-          npx playwright show-report ./merged-reports
-
-      - name: Upload Playwright HTML report
-        uses: actions/upload-artifact@v4
-        with:
-          name: playwright-html-report
-          path: playwright-report/
-          retention-days: 30
 
       # - name: Comment PR with test results
       #   if: github.event_name == 'pull_request'
