@@ -1,4 +1,4 @@
-# Databox [![.NET](https://github.com/knom/databox/actions/workflows/dotnet.yml/badge.svg)](https://github.com/knom/databox/actions/workflows/dotnet.yml)
+# Databox [![.NET](https://github.com/knom/databox/actions/workflows/dotnet.yml/badge.svg)](https://github.com/knom/databox/actions/workflows/dotnet.yml) [![E2E Tests](https://github.com/knom/databox/actions/workflows/e2e-tests.yml/badge.svg?branch=main)](https://github.com/knom/databox/actions/workflows/e2e-tests.yml)
 
 > One-time verified file and message submission system with email delivery.
 
