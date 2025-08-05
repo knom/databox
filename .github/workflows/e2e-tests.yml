@@ -264,7 +264,7 @@ jobs:
                 const browsers = [
                   'chromium', 
                   'firefox', 
-                  # 'webkit', 
+                  // 'webkit', 
                   'mobile-chrome'
                 ];
                 let hasResults = false;
