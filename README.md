@@ -10,6 +10,12 @@
 
 Databox is a lightweight ASP.NET Core MVC application that allows users to verify their email once, upload files and a message, and have their submission securely sent to a predefined recipient via email.
 
+## 🤖 AI Tools used
+- ChatGPT for texts, logo and initial source code scaffolding
+- Github Copilot for tuning the source code in VSCode
+- Openhands/AllHands.dev for E2E tests scaffolding
+- GenTube for graphics
+
 ## ✨ Features
 
 - One-time email verification flow
@@ -167,4 +173,4 @@ Visit: http\://localhost:xxxx
 
 ---
 
-MIT Licensed. Made with ❤️ in .NET
+MIT Licensed. Made with ❤️ with a lot of AI
