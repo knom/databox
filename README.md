@@ -8,7 +8,7 @@
 
 ## 🚀 Overview
 
-Databox is a lightweight ASP.NET Core MVC application that allows users to verify their email once, upload files and a message, and have their submission securely sent to a predefined recipient via email.
+Databox is a lightweight ASP.NET Core MVC application that allows verified website users to securely upload and submit files into a databox that can be accessed by the operators.
 
 ## 🤖 AI Tools used
 - ChatGPT for texts, logo and initial source code scaffolding
